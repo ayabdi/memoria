@@ -8,8 +8,8 @@ import { MessageBox } from "@/components/MessageBox";
 
 const Home: NextPage = () => {
   const { mutate } = trpc.message.createMessage.useMutation();
-  const createMessage = (text: string) => mutate({ text })
-  
+  const createMessage = (text: string) => mutate({ text });
+
   return (
     <>
       <Head>
@@ -18,11 +18,15 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen flex-col items-center justify-center bg-zinc-800">
-        <div className="flex h-full w-1/2 max-w-[900px] border-x border-slate-700">
-          <div className="self-end w-full px-4 pb-10">
-            <MessageBox onClick={createMessage} />
+        {useSession().data?.user ? (
+          <div className="flex h-full w-1/2 max-w-[900px] border-x border-slate-700">
+            <div className="w-full self-end px-4 pb-10">
+              <MessageBox onSubmit={createMessage} />
+            </div>
           </div>
-        </div>
+        ) : (
+          <AuthShowcase />
+        )}
       </main>
     </>
   );
