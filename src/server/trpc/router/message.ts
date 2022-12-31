@@ -8,6 +8,7 @@ export const messageRouter = router({
             data: {
                 ...input,
                 userId: ctx.session?.user?.id!,
+                from: ctx.session?.user?.name!,
             },
         });
     }),
