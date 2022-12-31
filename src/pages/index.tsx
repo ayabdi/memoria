@@ -6,18 +6,37 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 import { MessageInputBox } from "@/components/MessageInputBox";
 import { MessageRow } from "@/components/MessageRow";
+import { useState } from "react";
+
+const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
+  if (!dateY) return false;
+  const diff = Math.abs(dateX.getTime() - dateY.getTime());
+  return diff < 5 * 60 * 1000;
+};
+
 
 const Home: NextPage = () => {
+  const [unsentMessages, setUnsentMessages] = useState<string[]>([]);
+  const removeUnsentMessage = (text: string) => {
+    setUnsentMessages((prev) => {
+      const idx = prev.indexOf(text);
+      if (idx === -1) return prev;
+      return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+    });
+  };
+
   const { data: messages, refetch } = trpc.message.allMessages.useQuery();
-
   const { mutate } = trpc.message.createMessage.useMutation();
-  const createMessage = async (text: string) =>
-    mutate({ text }, { onSuccess: () => refetch() });
-
-  const isWithinFiveMinutes = (dateX: Date, dateY: Date) => {
-    if (!dateY) return false;
-    const diff = Math.abs(dateX.getTime() - dateY.getTime());
-    return diff < 5 * 60 * 1000;
+  const createMessage = async (text: string) => {
+    setUnsentMessages((prev) => [...prev, text]);
+    mutate(
+      { text },
+      {
+        onSuccess: () =>
+          refetch().then(() =>  removeUnsentMessage(text)),
+          onError: () => removeUnsentMessage(text)
+      }
+    );
   };
 
   return (
@@ -39,10 +58,22 @@ const Home: NextPage = () => {
                   key={idx}
                   hideLabels={isWithinFiveMinutes(
                     message.createdAt,
-                    messages[idx - 1]?.createdAt!
+                    messages[idx - 1]?.createdAt
                   )}
                 />
               ))}
+              {unsentMessages &&
+                unsentMessages.map((message, idx) => (
+                  <MessageRow
+                    message={message}
+                    name="You"
+                    date={new Date()}
+                    hideLabels={isWithinFiveMinutes(
+                      new Date(),
+                      messages?.[messages.length - 1]?.createdAt
+                    )}
+                  />
+                ))}
               <MessageInputBox onSubmit={createMessage} />
             </div>
           </div>
