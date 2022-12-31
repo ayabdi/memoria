@@ -19,7 +19,7 @@ export const MessageRow = (props: MessageRowProps) => {
   const isYou = sessionData?.user?.name === name;
 
   return !props.hideLabels ? (
-    <div className="flex flex-row items-center justify-between pt-8">
+    <div className="justify-between pt-8">
       <div className="flex flex-row items-center">
         <Avatar name={name} size="50" className="rounded-md" />
         <div className="ml-4 flex flex-col">

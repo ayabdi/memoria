@@ -6,7 +6,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 import { MessageInputBox } from "@/components/MessageInputBox";
 import { MessageRow } from "@/components/MessageRow";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
   if (!dateY) return false;
@@ -14,8 +14,21 @@ const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
   return diff < 5 * 60 * 1000;
 };
 
-
 const Home: NextPage = () => {
+  const { data: messages, refetch } = trpc.message.allMessages.useQuery();
+  const { mutate } = trpc.message.createMessage.useMutation();
+  const createMessage = async (text: string) => {
+    scrollToBottom();
+    setUnsentMessages((prev) => [...prev, text]);
+    mutate(
+      { text },
+      {
+        onSuccess: () => refetch().then(() => removeUnsentMessage(text)),
+        onError: () => removeUnsentMessage(text),
+      }
+    );
+  };
+
   const [unsentMessages, setUnsentMessages] = useState<string[]>([]);
   const removeUnsentMessage = (text: string) => {
     setUnsentMessages((prev) => {
@@ -24,20 +37,13 @@ const Home: NextPage = () => {
       return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
     });
   };
-
-  const { data: messages, refetch } = trpc.message.allMessages.useQuery();
-  const { mutate } = trpc.message.createMessage.useMutation();
-  const createMessage = async (text: string) => {
-    setUnsentMessages((prev) => [...prev, text]);
-    mutate(
-      { text },
-      {
-        onSuccess: () =>
-          refetch().then(() =>  removeUnsentMessage(text)),
-          onError: () => removeUnsentMessage(text)
-      }
-    );
+  
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const scrollToBottom = () => {
+    const scroll = chatContainerRef.current?.scrollHeight! - chatContainerRef.current?.clientHeight!;
+    chatContainerRef.current?.scrollTo(0, scroll);
   };
+  scrollToBottom();
 
   return (
     <>
@@ -48,8 +54,8 @@ const Home: NextPage = () => {
       </Head>
       <main className="flex h-screen flex-col items-center justify-center bg-zinc-800">
         {useSession().data?.user ? (
-          <div className="flex h-full w-1/2 min-w-[400px] max-w-[900px] border-x border-slate-700">
-            <div className="w-full self-end px-6 pb-10">
+          <div className="flex h-full w-1/2 min-w-[400px] max-w-[900px] flex-col border-x border-slate-700 px-6 pb-5">
+            <div ref={chatContainerRef} className="h-[95vw] w-full flex-1 overflow-y-auto flex flex-col justify-end">
               {messages?.map((message, idx) => (
                 <MessageRow
                   message={message.text}
@@ -74,6 +80,8 @@ const Home: NextPage = () => {
                     )}
                   />
                 ))}
+            </div>
+            <div className="flex-0">
               <MessageInputBox onSubmit={createMessage} />
             </div>
           </div>
