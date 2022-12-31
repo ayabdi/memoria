@@ -4,11 +4,20 @@ import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 import { trpc } from "../utils/trpc";
-import { MessageBox } from "@/components/MessageBox";
+import { MessageInputBox } from "@/components/MessageInputBox";
+import { MessageRow } from "@/components/MessageRow";
 
 const Home: NextPage = () => {
+  const { data: messages } = trpc.message.allMessages.useQuery();
+
   const { mutate } = trpc.message.createMessage.useMutation();
   const createMessage = (text: string) => mutate({ text });
+  
+  const isWithinFiveMinutes = (dateX: Date, dateY: Date) => {
+    if(!dateY) return false;
+    const diff = Math.abs(dateX.getTime() - dateY.getTime());
+    return diff < 5 * 60 * 1000;
+  };
 
   return (
     <>
@@ -19,9 +28,18 @@ const Home: NextPage = () => {
       </Head>
       <main className="flex h-screen flex-col items-center justify-center bg-zinc-800">
         {useSession().data?.user ? (
-          <div className="flex h-full w-1/2 max-w-[900px] border-x border-slate-700">
-            <div className="w-full self-end px-4 pb-10">
-              <MessageBox onSubmit={createMessage} />
+          <div className="flex h-full w-1/2 max-w-[900px] min-w-[400px] border-x border-slate-700">
+            <div className="w-full self-end px-6 pb-10">
+              {messages?.map((message, idx) => (
+                <MessageRow
+                  message={message.text}
+                  name={message.from}
+                  date={message.createdAt}
+                  key={idx}
+                  hideLabels={isWithinFiveMinutes(message.createdAt, messages[idx - 1]?.createdAt!)}
+                />
+              ))}
+              <MessageInputBox onSubmit={createMessage} />
             </div>
           </div>
         ) : (
