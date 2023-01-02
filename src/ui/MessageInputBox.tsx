@@ -21,7 +21,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
     setMessage("");
     setTags([]);
   };
-
+ 
   return (
     <div className="h-26 mt-6 flex w-full flex-col rounded bg-[#36363B] px-3 py-2">
       <div className="flex h-6 w-full flex-row">
@@ -65,7 +65,8 @@ export const MessageInputBox = (props: MessageBoxProps) => {
           <div
             className="my-auto ml-1.5 flex w-max rounded-2xl border py-0.5 pl-3 pr-2 text-sm text-white"
             style={{
-              backgroundColor: tag.color.replace("1)", "0.2)"),
+              // replace last 2 characters with 0.2)
+              backgroundColor: tag.color.slice(0, -2) + "0.2)",
               // @ts-ignore
               borderColor: tag.color,
             }}
@@ -89,7 +90,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
           disabled={false} // use true to disable editing
           onChange={(e) => setMessage(e.target.value)}
           tagName="div"
-          placeholder="Type a message..."
+          placeholder="Type your message..."
         />
         <button type="submit" className="self-end">
           <img className="mr-2 h-7" src="/icons/send.svg" />
