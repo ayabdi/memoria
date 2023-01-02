@@ -2,22 +2,24 @@ import React, { useState } from "react";
 import ContentEditable from "react-contenteditable";
 import { Popover, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { CreateMessageSchema } from "@/types/messages.schema";
 
 interface MessageBoxProps {
-  onSubmit: (message: string) => void;
+  onSubmit: (message: CreateMessageSchema) => void;
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
   const [message, setMessage] = React.useState("");
-  const [tags, setTags] = useState<{ color: String; tagName: String }[]>([]);
+  const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
 
   const contentEditable = React.useRef<HTMLDivElement>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    props.onSubmit(message);
+    props.onSubmit({ text: message, tags: tags.map((tag) => { return {type: 'new', tagName: tag.tagName, color: tag.color } }) });
     setMessage("");
+    setTags([]);
   };
 
   return (

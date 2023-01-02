@@ -23,7 +23,7 @@ export const MessageRow = (props: MessageRowProps) => {
   const { data: sessionData } = useSession();
   const isYou = sessionData?.user?.name === from;
 
-  return !props.hideLabels ? (
+  return (
     <div className={`justify-between pt-8 ${className}`}>
       <div className="flex flex-row items-center">
         <Avatar name={from} size="50" className="rounded-md" />
@@ -34,18 +34,23 @@ export const MessageRow = (props: MessageRowProps) => {
               {formattedDate}
             </span>
           </p>
-          {tags.map((tag) => (
-            <div
-              className={`border-${tag.tag.color} ${tag.tag.color}/20  w-max rounded-2xl border px-3 py-0.5 text-sm text-white`}
-            >
-              {tag.tag.tagName}
-            </div>
-          ))}
+          <div className="flex my-1">
+            {tags.map((tag) => (
+              <div
+                className={`mr-1.5 w-max rounded-2xl border px-3.5 py-0.5 text-sm text-white`}
+                style={{
+                  backgroundColor: tag.tag.color.replace("1)", "0.2)"),
+                  // @ts-ignore
+                  borderColor: tag.tag.color,
+                }}
+              >
+                {tag.tag.tagName}
+              </div>
+            ))}
+          </div>
           <p className="text-white">{text}</p>
         </div>
       </div>
     </div>
-  ) : (
-    <p className="ml-[67px] text-white">{text}</p>
-  );
+  )
 };

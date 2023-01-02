@@ -9,6 +9,7 @@ import { MessageRow } from "@/ui/MessageRow";
 import { useRef, useState } from "react";
 import { cleanMessage } from "@/utils/funtions";
 import { Tag } from "@/ui/Tag";
+import { CreateMessageSchema } from "@/types/messages.schema";
 
 const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
   if (!dateY) return false;
@@ -20,17 +21,14 @@ const Home: NextPage = () => {
   const { data: messages, refetch } = trpc.message.allMessages.useQuery();
 
   const { mutate } = trpc.message.createMessage.useMutation();
-  const createMessage = async (text: string) => {
-    const message = cleanMessage(text);
+  const createMessage = async (message: CreateMessageSchema) => {
+    const text = cleanMessage(message.text);
     scrollToBottom();
-    setUnsentMessages((prev) => [...prev, message]);
-    mutate(
-      { text: message },
-      {
-        onSuccess: () => refetch().then(() => removeUnsentMessage(message)),
-        onError: () => removeUnsentMessage(message),
-      }
-    );
+    setUnsentMessages((prev) => [...prev, message.text]);
+    mutate(message, {
+      onSuccess: () => refetch().then(() => removeUnsentMessage(text)),
+      onError: () => removeUnsentMessage(text),
+    });
   };
 
   // to display messages that are not yet sent to the server (optimistic UI)
