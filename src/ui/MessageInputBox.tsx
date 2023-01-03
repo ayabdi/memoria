@@ -17,11 +17,22 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    props.onSubmit({ text: message, tags: tags.map((tag) => { return {type: 'new', tagName: tag.tagName, color: tag.color } }) });
+    props.onSubmit({
+      text: message,
+      tags: tags.map((tag) => {
+        return { type: "new", tagName: tag.tagName, color: tag.color };
+      }),
+    });
     setMessage("");
     setTags([]);
   };
- 
+
+  const submitTags = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent) => {
+    e.preventDefault();
+    setTags([...tags, { color: randomColor()!, tagName: tagInput }]);
+    setTagInput("");
+  };
+
   return (
     <div className="h-26 mt-6 flex w-full flex-col rounded bg-[#36363B] px-3 py-2">
       <div className="flex h-6 w-full flex-row">
@@ -33,26 +44,19 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
           <Popover.Panel className="absolute z-10">
             <div className="absolute  -left-10 -top-[110px] z-10 my-2 min-h-[66px] w-80 origin-bottom-right rounded-md border-[0.5px] border-zinc-600 bg-[#36363B] text-zinc-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setTags([
-                    ...tags,
-                    { color: randomColor()!, tagName: tagInput },
-                  ]);
-                  setTagInput("");
-                }}
-              >
+              <form onSubmit={submitTags}>
                 <div className="flex h-6 flex-row p-4">
                   <input
                     className="h-9 w-full rounded-md border-[0.5px] border-zinc-600 bg-zinc-800 px-3 py-2 pb-3 outline-none"
                     placeholder="add a tag..."
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
+                    autoFocus
                   />
                   <img
                     className="ml-2 mt-0.5 inline h-7 cursor-pointer"
                     src="/icons/plus.svg"
+                    onClick={(e) => submitTags(e)}
                   />
                 </div>
               </form>
@@ -101,45 +105,37 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 };
 
 const randomColor = () => {
-  // 30 different colors in rgba
   const colors = [
-    "rgba(239,68,68,1)",
-    "rgba(252,211,77,1)",
-    "rgba(6,214,160,1)",
-    "rgba(6,152,214,1)",
-    "rgba(108,92,231,1)",
-    "rgba(190,88,255,1)",
-    "rgba(255,7,110,1)",
-    "rgba(209,213,219,1)",
-    "rgba(99,102,241,1)",
-    "rgba(239,68,68,0.8)",
-    "rgba(252,211,77,0.8)",
-    "rgba(6,214,160,0.8)",
-    "rgba(6,152,214,0.8)",
-    "rgba(108,92,231,0.8)",
-    "rgba(190,88,255,0.8)",
-    "rgba(255,7,110,0.8)",
-    "rgba(209,213,219,0.8)",
-    "rgba(99,102,241,0.8)",
-    "rgba(239,68,68,0.6)",
-    "rgba(252,211,77,0.6)",
-    "rgba(6,214,160,0.6)",
-    "rgba(6,152,214,0.6)",
-    "rgba(108,92,231,0.6)",
-    "rgba(190,88,255,0.6)",
-    "rgba(255,7,110,0.6)",
-    "rgba(209,213,219,0.6)",
-    "rgba(99,102,241,0.6)",
-    "rgba(239,68,68,0.4)",
-    "rgba(252,211,77,0.4)",
-    "rgba(6,214,160,0.4)",
-    "rgba(6,152,214,0.4)",
-    "rgba(108,92,231,0.4)",
-    "rgba(190,88,255,0.4)",
-    "rgba(255,7,110,0.4)",
-    "rgba(209,213,219,0.4)",
-    "rgba(99,102,241,0.4)",
+    "rgba(255, 99, 132, 1)",
+    "rgba(54, 162, 235, 1)",
+    "rgba(255, 206, 86, 1)",
+    "rgba(75, 192, 192, 1)",
+    "rgba(153, 102, 255, 1)",
+    "rgba(255, 159, 64, 1)",
+    "rgba(255, 99, 132, 1)",
+    "rgba(54, 162, 235, 1)",
+    "rgba(255, 206, 86, 1)",
+    "rgba(75, 192, 192, 1)",
+    "rgba(255, 0, 0, 1)",
+    "rgba(255, 0, 255, 1)",
+    "rgba(0, 0, 255, 1)",
+    "rgba(0, 255, 255, 1)",
+    "rgba(0, 255, 0, 1)",
+    "rgba(255, 255, 0, 1)",
+    "rgba(255, 127, 0, 1)",
+    "rgba(255, 0, 127, 1)",
+    "rgba(127, 0, 255, 1)",
+    "rgba(127, 255, 0, 1)",
+    "rgba(0, 127, 255, 1)",
+    "rgba(0, 255, 127, 1)",
+    "rgba(255, 127, 127, 1)",
+    "rgba(127, 255, 255, 1)",
+    "rgba(255, 255, 127, 1)",
+    "rgba(127, 127, 255, 1)",
+    "rgba(255, 127, 255, 1)",
+    "rgba(127, 255, 127, 1)",
+    "rgba(127, 127, 127, 1)",
+    "rgba(255, 255, 255, 1)",
   ];
-
   return colors[Math.floor(Math.random() * colors.length)];
 };

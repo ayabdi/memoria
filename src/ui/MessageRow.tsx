@@ -34,10 +34,10 @@ export const MessageRow = (props: MessageRowProps) => {
               {formattedDate}
             </span>
           </p>
-          <div className="flex my-1">
+          <div className="flex">
             {tags.map((tag) => (
               <div
-                className={`mr-1.5 w-max rounded-2xl border px-3.5 py-0.5 text-sm text-white`}
+                className={`my-1 mr-1.5 w-max rounded-2xl border px-3.5 py-0.5 text-sm text-white`}
                 style={{
                   backgroundColor: tag.tag.color.replace("1)", "0.2)"),
                   // @ts-ignore
@@ -52,5 +52,5 @@ export const MessageRow = (props: MessageRowProps) => {
         </div>
       </div>
     </div>
-  )
+  );
 };
