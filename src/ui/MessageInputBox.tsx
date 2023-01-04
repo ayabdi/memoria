@@ -3,12 +3,16 @@ import ContentEditable from "react-contenteditable";
 import { Popover, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { CreateMessageSchema } from "@/types/messages.schema";
+import { Tag } from "@prisma/client";
+import { cleanMessage } from "@/utils/funtions";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema) => void;
+  existingTags?: Tag[];
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
+  const { existingTags, onSubmit } = props;
   const [message, setMessage] = React.useState("");
   const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -17,20 +21,35 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    props.onSubmit({
-      text: message,
+    onSubmit({
+      text: cleanMessage(message),
       tags: tags.map((tag) => {
-        return { type: "new", tagName: tag.tagName, color: tag.color };
+        const existingTag = existingTags?.find(
+          (existingTag) =>
+            existingTag.tagName.toLowerCase() === tag.tagName.toLowerCase()
+        );
+        return { tagName: tag.tagName, color: tag.color, tagid: existingTag?.id };
       }),
     });
     setMessage("");
     setTags([]);
   };
 
-  const submitTags = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent) => {
+  const submitTags = (
+    e: React.FormEvent<HTMLFormElement> | React.MouseEvent
+  ) => {
     e.preventDefault();
     setTags([...tags, { color: randomColor()!, tagName: tagInput }]);
     setTagInput("");
+  };
+
+  const searchExistingTags = (tagName: string) => {
+    if (!existingTags) return [];
+    return existingTags
+      .filter((tag) => !tags.find((t) => t.tagName === tag.tagName))
+      .filter((tag) =>
+        tag.tagName.toLowerCase().includes(tagInput.toLowerCase())
+      );
   };
 
   return (
@@ -60,6 +79,31 @@ export const MessageInputBox = (props: MessageBoxProps) => {
                   />
                 </div>
               </form>
+              <div className="flex flex-row ml-2.5 mt-8 mb-3">
+                {/* Search existing tags based on input */}
+                {tagInput.length > 0 &&
+                  searchExistingTags(tagInput).map((tag, idx) => (
+                    <div
+                      className="my-auto ml-1.5 flex w-max rounded-2xl border py-0.5 px-3 text-sm text-white text-center"
+                      style={{
+                        // replace last 2 characters with 0.2)
+                        backgroundColor: tag.color.slice(0, -2) + "0.2)",
+                        // @ts-ignore
+                        borderColor: tag.color,
+                      }}
+                      key={idx}
+                      onClick={() => {
+                        setTags([
+                          ...tags,
+                          { color: tag.color, tagName: tag.tagName },
+                        ]);
+                        setTagInput("");
+                      }}
+                    >
+                      {tag.tagName}
+                    </div>
+                  ))}
+              </div>
             </div>
           </Popover.Panel>
         </Popover>
