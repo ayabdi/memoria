@@ -1,10 +1,10 @@
 import { type NextPage } from "next";
 import Head from "next/head";
 import { useSession } from "next-auth/react";
-import { MainFeed } from "@/ui/MainFeed";
+import { Home } from "@/ui/Home";
 import { Login } from "@/ui/Login";
 
-const Home: NextPage = () => {
+const App: NextPage = () => {
   const { data: session } = useSession();
   return (
     <>
@@ -15,7 +15,7 @@ const Home: NextPage = () => {
       </Head>
       <main className="flex h-screen flex-col items-center justify-center bg-zinc-800">
         {session?.user ? (
-          <MainFeed/>
+          <Home/>
         ) : (
           <Login />
         )}
@@ -24,4 +24,4 @@ const Home: NextPage = () => {
   );
 };
 
-export default Home;
+export default App;

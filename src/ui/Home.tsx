@@ -13,7 +13,7 @@ const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
   return diff < 5 * 60 * 1000;
 };
 
-export const MainFeed = () => {
+export const Home = () => {
   const [pageNo, setPageNo] = useState<number>(1);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
 
