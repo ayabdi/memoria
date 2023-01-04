@@ -58,6 +58,13 @@ const Home: NextPage = () => {
     );
     if (lastMessage) lastMessage.scrollIntoView();
   };
+  
+  const scrollToBottom = () => {
+    const scroll =
+      chatContainerRef.current?.scrollHeight! -
+      chatContainerRef.current?.clientHeight!;
+    chatContainerRef.current?.scrollTo(0, scroll);
+  };
 
   // set all messages when the page is loaded for the first time
   useEffect(() => {
@@ -69,6 +76,11 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (messages) scrollToLastMessage();
   }, [allMessages]);
+
+  // scroll to the bottom when new messages are added but not yet sent to the server
+  useEffect(() => {
+    if (unsentMessages.length) scrollToBottom();
+  }, [unsentMessages]);
 
   const user = useSession().data?.user;
 
