@@ -1,6 +1,5 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 import { trpc } from "../utils/trpc";
@@ -52,9 +51,7 @@ const Home: NextPage = () => {
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // scroll to bottom of page when new message is sent
   const scrollToLastMessage = () => {
-    // scroll to id of last message offset 50px
     if (!messages?.length) return;
     const lastMessage = document.getElementById(
       messages[messages.length - 1]?.id!
@@ -62,18 +59,21 @@ const Home: NextPage = () => {
     if (lastMessage) lastMessage.scrollIntoView();
   };
 
+  // set all messages when the page is loaded for the first time
   useEffect(() => {
-    // set all messages when the page is loaded for the first time
     if (isFetched && pageNo === 1) setAllMessages(messages);
   }, [isFetched]);
 
+  // scroll to the last fetched message every page load
+  // this to prevent abrupt scrolling to the top when new messages are fetched
   useEffect(() => {
     if (messages) scrollToLastMessage();
   }, [allMessages]);
 
   const user = useSession().data?.user;
 
-  // detect scroll to top of page
+  // trigger page number change when user scrolls to top of page
+  // would ideally refetch and update pagNo in one go, but cant pass input to refetch function for some reason
   useEffect(() => {
     if (!isFetched || !chatContainerRef.current) return;
     const handleScroll = () => {
@@ -87,8 +87,8 @@ const Home: NextPage = () => {
     };
   }, [isFetched, allMessages, messages]);
 
+   // refetch when page number changes
   useEffect(() => {
-    // refetch when page number changes
     if (pageNo > 1)
       refetch().then(({ data }) => {
         if (data?.length) setAllMessages((prev) => [...data, ...prev!]);
