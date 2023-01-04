@@ -1,15 +1,14 @@
 
 import { router, publicProcedure } from "../trpc";
 import { CreateMessageSchema } from "@/types/messages.schema";
-
+import { z } from "zod";
 export const messageRouter = router({
     createMessage: publicProcedure.input(CreateMessageSchema).mutation(({ ctx, input }) => {
         const name = ctx.session?.user?.name!
         const userId = ctx.session?.user?.id!
 
         const tagsToAdd = input.tags?.map((tag) => {
-            // If the tag is an existing tag, connect to it, otherwise create a new one
-            if (tag.type === 'existing') return { tag: { connect: { id: tag.tagId } } }
+            if (tag.tagId) return { tag: { connect: { id: tag.tagId } } }
             return { tag: { create: { tagName: tag.tagName, color: tag.color, userId } } }
         })
 
@@ -23,10 +22,19 @@ export const messageRouter = router({
         });
     }),
 
-    allMessages: publicProcedure.query(({ ctx }) => {
-        return ctx.prisma.message.findMany({
+    allMessages: publicProcedure.input(z.object({ page: z.number().optional() }).optional()).query(async ({ ctx, input }) => {
+        const page = input?.page || 1
+        const take = 40
+        const skip = (page - 1) * take
+
+        const result = await ctx.prisma.message.findMany({
+            take,
+            skip,
             where: {
                 userId: ctx.session?.user?.id!,
+            },
+            orderBy: {
+                createdAt: "desc",
             },
             include: {
                 tags: {
@@ -34,7 +42,15 @@ export const messageRouter = router({
                         tag: true,
                     },
                 },
-        },
+            },
+        });
+        return result.reverse();
+    }),
+    allTags: publicProcedure.query(({ ctx }) => {
+        return ctx.prisma.tag.findMany({
+            where: {
+                userId: ctx.session?.user?.id,
+            },
         });
     }),
 });
