@@ -14,6 +14,7 @@ const App: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen flex-col items-center justify-center bg-zinc-800">
+      <div className="h-[50px] py-4 fixed top-0 w-full border-b-[0.5px] border-slate-700"></div>
         {session?.user ? (
           <Home/>
         ) : (

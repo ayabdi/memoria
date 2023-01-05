@@ -6,6 +6,7 @@ import { MessageRow } from "@/ui/components/MessageRow";
 import { useEffect, useRef, useState } from "react";
 import { CreateMessageSchema } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
+import { MoonLoader } from "react-spinners";
 
 const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
   if (!dateY) return false;
@@ -15,13 +16,17 @@ const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
 
 export const Home = () => {
   const [pageNo, setPageNo] = useState<number>(1);
+  const [tagToFilter, setTagToFilter] = useState<Tag | null>(null);
+
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
 
   const {
     data: messages,
     refetch,
     isFetched,
-  } = trpc.message.allMessages.useQuery({ page: pageNo });
+  } = trpc.message.allMessages.useQuery({
+    page: pageNo,
+  });
   const [allMessages, setAllMessages] = useState<typeof messages>([]);
 
   const { data: tags } = trpc.message.allTags.useQuery();
@@ -106,29 +111,95 @@ export const Home = () => {
       });
   }, [pageNo]);
 
+  // refetch when tag is selected
+  useEffect(() => {
+    if (tagToFilter) {
+      refetch().then(({ data }) => {
+        if (data?.length) setAllMessages(data);
+        else setHasMoreMessages(false);
+      });
+    }
+  }, [tagToFilter]);
+
+  const onClickTagToFilter = (tag: Tag) => {
+    setTagToFilter(tag);
+    setPageNo(1);
+  };
+
+  const { data: filteredMessages, refetch: refetchFilteredMessages, isLoading: isFilterLoading } =
+    trpc.message.messagesByTag.useQuery({
+      tagId: tagToFilter?.id,
+    });
+
+  useEffect(() => {
+    if (!tagToFilter) return scrollToBottom(); 
+    refetchFilteredMessages()
+    
+  }, [tagToFilter]);
+
   return (
     <>
-      <div className="flex h-full w-1/2 min-w-[400px] max-w-[900px] flex-col border-x border-slate-700 px-6 pb-5">
+      <div className="mt-auto flex h-[calc(100vh_-_50px)] w-1/2 min-w-[400px] max-w-[900px] flex-col border-x border-slate-700 pb-5">
         <div
           ref={chatContainerRef}
-          className="flex h-[95vw] w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap first:mt-auto"
+          className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
         >
-          {allMessages?.map((message, idx) => (
-            <div id={message.id}>
-              <MessageRow
-                text={message.text}
-                createdAt={message.createdAt}
-                from={message.from}
-                tags={message.tags.map((tag) => tag.tag)}
-                key={message.id}
-                hideLabels={isWithinFiveMinutes(
-                  message.createdAt,
-                  allMessages[idx - 1]?.createdAt
-                )}
-                className={idx === 0 ? "mt-auto" : ""}
+          {tagToFilter ? (
+            <>
+              <div className="flex w-full border-b-[0.5px] border-slate-700 px-6 py-4 text-lg text-white">
+                <img
+                  src="/icons/left-arrow.svg"
+                  className="my-auto h-5 cursor-pointer pr-3 "
+                  onClick={() => {setTagToFilter(null)}}
+                />
+                <p> Search by "{tagToFilter.tagName}"</p>
+              </div>
+              {filteredMessages?.map((message, idx) => (
+                <div
+                  id={message.id}
+                  className={idx === 0 ? "mt-auto px-6" : "px-6"}
+                >
+                  <MessageRow
+                    text={message.text}
+                    createdAt={message.createdAt}
+                    from={message.from}
+                    tags={message.tags.map((tag) => tag.tag)}
+                    key={message.id}
+                    onClickTag={onClickTagToFilter}
+                    className={idx === 0 ? "mt-auto" : ""}
+                  />
+                </div>
+              ))}
+              <MoonLoader
+                color="#fff"
+                size={70}
+                className="m-auto"
+                loading={isFilterLoading}
+                
               />
-            </div>
-          ))}
+            </>
+          ) : (
+            allMessages?.map((message, idx) => (
+              <div
+                id={message.id}
+                className={idx === 0 ? "mt-auto px-6" : "px-6"}
+              >
+                <MessageRow
+                  text={message.text}
+                  createdAt={message.createdAt}
+                  from={message.from}
+                  tags={message.tags.map((tag) => tag.tag)}
+                  key={message.id}
+                  onClickTag={onClickTagToFilter}
+                  hideLabels={isWithinFiveMinutes(
+                    message.createdAt,
+                    allMessages[idx - 1]?.createdAt
+                  )}
+                  className={idx === 0 ? "mt-auto" : ""}
+                />
+              </div>
+            ))
+          )}
 
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
@@ -137,13 +208,18 @@ export const Home = () => {
                 createdAt={new Date()}
                 from={user?.name!}
                 tags={message.tags as Tag[]}
+                onClickTag={onClickTagToFilter}
                 key={idx}
                 className={messages?.length === 0 ? "mt-auto" : ""}
               />
             ))}
         </div>
-        <div className="flex-0">
-          <MessageInputBox existingTags={tags} onSubmit={createMessage} />
+        <div className="flex-0 px-6">
+          <MessageInputBox
+            existingTags={tags}
+            tagToFilter={tagToFilter}
+            onSubmit={createMessage}
+          />
         </div>
       </div>
     </>

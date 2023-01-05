@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ContentEditable from "react-contenteditable";
 import { Popover, Transition } from "@headlessui/react";
 import { Fragment } from "react";
@@ -9,10 +9,11 @@ import { cleanMessage } from "@/utils/funtions";
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema) => void;
   existingTags?: Tag[];
+  tagToFilter?: Tag | null;
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
-  const { existingTags, onSubmit } = props;
+  const { existingTags, onSubmit, tagToFilter: selectedTag } = props;
   const [message, setMessage] = React.useState("");
   const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -43,7 +44,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
     setTagInput("");
   };
 
-  const searchExistingTags = (tagName: string) => {
+  const searchExistingTags = () => {
     if (!existingTags) return [];
     return existingTags
       .filter((tag) => !tags.find((t) => t.tagName === tag.tagName))
@@ -51,6 +52,16 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         tag.tagName.toLowerCase().includes(tagInput.toLowerCase())
       );
   };
+
+  // include filter tag in tags if not already included
+  useEffect(() => {
+    setTags([]);
+    if(!selectedTag) return
+    
+    if (!tags.find((t) => t.tagName === selectedTag?.tagName)) {
+      setTags([...tags, { color: selectedTag!.color, tagName: selectedTag!.tagName }]);
+    }
+  }, [selectedTag]);
 
   return (
     <div className="h-26 mt-6 flex w-full flex-col rounded bg-[#36363B] px-3 py-2">
@@ -82,7 +93,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
               <div className="flex flex-row ml-2.5 mt-8 mb-3">
                 {/* Search existing tags based on input */}
                 {tagInput.length > 0 &&
-                  searchExistingTags(tagInput).map((tag, idx) => (
+                  searchExistingTags().map((tag, idx) => (
                     <div
                       className="my-auto ml-1.5 flex w-max rounded-2xl border py-0.5 px-3 text-sm text-white text-center"
                       style={{
@@ -114,13 +125,12 @@ export const MessageInputBox = (props: MessageBoxProps) => {
             className="my-auto ml-1.5 flex w-max rounded-2xl border py-0.5 pl-3 pr-2 text-sm text-white"
             style={{
               // replace last 2 characters with 0.2)
-              backgroundColor: tag.color.slice(0, -2) + "0.2)",
-              // @ts-ignore
-              borderColor: tag.color,
+              backgroundColor: tag?.color.slice(0, -2) + "0.2)",
+              borderColor: tag?.color,
             }}
             key={idx}
           >
-            {tag.tagName}
+            {tag?.tagName}
             <p
               className="ml-1.5 cursor-pointer"
               onClick={() => setTags(tags.filter((_, i) => i !== idx))}

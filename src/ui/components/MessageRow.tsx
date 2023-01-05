@@ -8,12 +8,13 @@ interface MessageRowProps{
   from: string;
   createdAt: Date;
   tags: Tag[];
+  onClickTag?: (tag: Tag) => void;
   hideLabels?: boolean;
   className?: string;
 }
 
 export const MessageRow = (props: MessageRowProps) => {
-  const { text, from, createdAt, tags, className } = props;
+  const { text, from, createdAt, tags, className, onClickTag } = props;
 
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     hour: "numeric",
@@ -36,12 +37,13 @@ export const MessageRow = (props: MessageRowProps) => {
           <div className="flex">
             {tags.map((tag) => (
               <div
-                className={`my-1 mr-1.5 -ml-1 w-max rounded-2xl border px-2.5 py-[1px] text-[13px] text-white`}
+                className={`my-1 mr-1.5 -ml-1 w-max rounded-2xl border px-2.5 py-[1px] text-[13px] text-white cursor-pointer`}
                 style={{
                   backgroundColor: tag.color.replace("1)", "0.2)"),
                   // @ts-ignore
                   borderColor: tag.color,
                 }}
+                onClick={() => onClickTag?.(tag)}
               >
                 {tag.tagName}
               </div>

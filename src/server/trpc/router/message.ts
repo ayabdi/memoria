@@ -8,6 +8,7 @@ export const messageRouter = router({
         const userId = ctx.session?.user?.id!
 
         const tagsToAdd = input.tags?.map((tag) => {
+            console.log(tag)
             if (tag.tagId) return { tag: { connect: { id: tag.tagId } } }
             return { tag: { create: { tagName: tag.tagName, color: tag.color, userId } } }
         })
@@ -22,7 +23,7 @@ export const messageRouter = router({
         });
     }),
 
-    allMessages: publicProcedure.input(z.object({ page: z.number().optional() }).optional()).query(async ({ ctx, input }) => {
+    allMessages: publicProcedure.input(z.object({ page: z.number().optional(), tagId: z.string().optional() }).optional()).query(async ({ ctx, input }) => {
         const page = input?.page || 1
         const take = 40
         const skip = (page - 1) * take
@@ -32,6 +33,11 @@ export const messageRouter = router({
             skip,
             where: {
                 userId: ctx.session?.user?.id!,
+                tags: {
+                    some: {
+                        tagId: input?.tagId,
+                    },
+                },
             },
             orderBy: {
                 createdAt: "desc",
@@ -46,6 +52,38 @@ export const messageRouter = router({
         });
         return result.reverse();
     }),
+    messagesByTag: publicProcedure.input(z.object({ tagId: z.string().optional(), page: z.number().optional() }))
+        .query(async ({ ctx, input }) => {
+            if(!input.tagId) return []
+            const page = input.page || 1
+            const take = 40
+            const skip = (page - 1) * take
+
+            const result = await ctx.prisma.message.findMany({
+                take,
+                skip,
+                where: {
+                    userId: ctx.session?.user?.id!,
+                    tags: {
+                        some: {
+                            tagId: input.tagId,
+                        },
+                    },
+                },
+                orderBy: {
+                    createdAt: "desc",
+                },
+                include: {
+                    tags: {
+                        include: {
+                            tag: true,
+                        },
+                    },
+                },
+            });
+            return result.reverse();
+        }),
+
     allTags: publicProcedure.query(({ ctx }) => {
         return ctx.prisma.tag.findMany({
             where: {
