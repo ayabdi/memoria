@@ -28,7 +28,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
           (existingTag) =>
             existingTag.tagName.toLowerCase() === tag.tagName.toLowerCase()
         );
-        return { tagName: tag.tagName, color: tag.color, tagid: existingTag?.id };
+        return { tagName: tag.tagName, color: tag.color, tagId: existingTag?.id };
       }),
     });
     setMessage("");
