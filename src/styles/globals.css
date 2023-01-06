@@ -2,10 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+[contenteditable="true"]:empty:before {
+  content: attr(placeholder);
+  pointer-events: none;
+  display: block; /* For Firefox */
+  color: #aaa;
+  font-size: 14px;
+  margin-left: 2px;
+}
 
-[contenteditable=true]:empty:before{
-    content: attr(placeholder);
-    pointer-events: none;
-    display: block; /* For Firefox */
-    color: #aaa;
-  }
+.w-md-editor-content,
+.w-md-editor-toolbar,
+.w-md-editor-bar,
+.w-md-editor-aree,
+.w-md-editor-input,
+.w-md-editor {
+  background-color: rgb(54 54 59 / 1) !important;
+  white-space: nowrap;
+}
+
+.w-md-editor-toolbar {
+  display: none !important;
+}
+
+.wmde-markdown{
+    --tw-border-opacity: 1;
+    background-color: rgb(39 39 42 / var(--tw-bg-opacity)) !important;
+    white-space: nowrap;
+}

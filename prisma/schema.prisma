@@ -72,8 +72,9 @@ model Message {
   userId    String
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
-  text      String
+  content   String
   from      String
+  type      String
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   tags      TagsOnMessages[]
 }

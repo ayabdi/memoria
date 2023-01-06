@@ -1,4 +1,4 @@
-import { signIn, signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 import { trpc } from "../utils/trpc";
 import { MessageInputBox } from "@/ui/components/MessageInputBox";
@@ -34,8 +34,12 @@ export const Home = () => {
   const { mutate } = trpc.message.createMessage.useMutation();
   const createMessage = async (message: CreateMessageSchema) => {
     setUnsentMessages((prev) => [...prev, message]);
+    setPageNo(1);
     mutate(message, {
-      onSuccess: () => refetch().then(() => removeUnsentMessage(message)),
+      onSuccess: () => refetch().then(({data}) => { 
+        removeUnsentMessage(message)
+        if(data?.length) setAllMessages(data)
+      }),
       onError: () => removeUnsentMessage(message),
     });
   };
@@ -126,42 +130,49 @@ export const Home = () => {
     setPageNo(1);
   };
 
-  const { data: filteredMessages, refetch: refetchFilteredMessages, isLoading: isFilterLoading } =
-    trpc.message.messagesByTag.useQuery({
-      tagId: tagToFilter?.id,
-    });
+  const {
+    data: filteredMessages,
+    refetch: refetchFilteredMessages,
+    isLoading: isFilterLoading,
+  } = trpc.message.messagesByTag.useQuery({
+    tagId: tagToFilter?.id,
+  });
 
   useEffect(() => {
-    if (!tagToFilter) return scrollToBottom(); 
-    refetchFilteredMessages()
-    
+    if (!tagToFilter) return scrollToBottom();
+    refetchFilteredMessages();
   }, [tagToFilter]);
-
+  
   return (
     <>
-      <div className="mt-auto flex h-[calc(100vh_-_50px)] w-1/2 min-w-[400px] max-w-[900px] flex-col border-x border-slate-700 pb-5">
+      <div className="mt-auto flex h-[calc(100vh_-_50px)] w-1/2 min-w-[700px] max-w-[900px] flex-col border-x border-slate-700 pb-5">
+        {tagToFilter && (
+          <div className="flex w-full border-b-[0.5px] border-slate-700 px-6 py-4 text-lg text-white">
+            <img
+              src="/icons/left-arrow.svg"
+              className="my-auto h-5 cursor-pointer pr-3 "
+              onClick={() => {
+                setTagToFilter(null);
+              }}
+            />
+            <p> {tagToFilter?.tagName}</p>
+          </div>
+        )}
         <div
           ref={chatContainerRef}
           className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
         >
           {tagToFilter ? (
             <>
-              <div className="flex w-full border-b-[0.5px] border-slate-700 px-6 py-4 text-lg text-white">
-                <img
-                  src="/icons/left-arrow.svg"
-                  className="my-auto h-5 cursor-pointer pr-3 "
-                  onClick={() => {setTagToFilter(null)}}
-                />
-                <p> Search by "{tagToFilter.tagName}"</p>
-              </div>
               {filteredMessages?.map((message, idx) => (
                 <div
                   id={message.id}
                   className={idx === 0 ? "mt-auto px-6" : "px-6"}
                 >
                   <MessageRow
-                    text={message.text}
+                    content={message.content}
                     createdAt={message.createdAt}
+                    type={message.type}
                     from={message.from}
                     tags={message.tags.map((tag) => tag.tag)}
                     key={message.id}
@@ -175,7 +186,6 @@ export const Home = () => {
                 size={70}
                 className="m-auto"
                 loading={isFilterLoading}
-                
               />
             </>
           ) : (
@@ -185,9 +195,10 @@ export const Home = () => {
                 className={idx === 0 ? "mt-auto px-6" : "px-6"}
               >
                 <MessageRow
-                  text={message.text}
+                  content={message.content}
                   createdAt={message.createdAt}
                   from={message.from}
+                  type={message.type}
                   tags={message.tags.map((tag) => tag.tag)}
                   key={message.id}
                   onClickTag={onClickTagToFilter}
@@ -204,13 +215,14 @@ export const Home = () => {
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
               <MessageRow
-                text={message.text}
+                content={message.content}
                 createdAt={new Date()}
                 from={user?.name!}
+                type={message.type}
                 tags={message.tags as Tag[]}
                 onClickTag={onClickTagToFilter}
                 key={idx}
-                className={messages?.length === 0 ? "mt-auto" : ""}
+                className={messages?.length === 0 ? "mt-auto px-6" : "px-6"}
               />
             ))}
         </div>

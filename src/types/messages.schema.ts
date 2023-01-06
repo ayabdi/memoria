@@ -7,7 +7,8 @@ export const CreateTagSchema = z.object({
     tagId: z.string().optional(),
 })
 export const CreateMessageSchema = z.object({
-    text: z.string(),
+    content: z.string(),
+    type: z.string(),
     tags: z.array(CreateTagSchema).optional(),
 })
 

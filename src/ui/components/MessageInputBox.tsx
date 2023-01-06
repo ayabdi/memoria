@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ContentEditable from "react-contenteditable";
 import { Popover, Transition } from "@headlessui/react";
-import { Fragment } from "react";
 import { CreateMessageSchema } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { cleanMessage } from "@/utils/funtions";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
+import dynamic from "next/dynamic";
+
+const MDEditor = dynamic(
+  () => import("@uiw/react-md-editor").then((mod) => mod.default),
+  { ssr: false }
+);
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema) => void;
@@ -15,6 +22,9 @@ interface MessageBoxProps {
 export const MessageInputBox = (props: MessageBoxProps) => {
   const { existingTags, onSubmit, tagToFilter: selectedTag } = props;
   const [message, setMessage] = React.useState("");
+  const [markdownMode, setMarkdownMode] = useState(false);
+  const [mdValue, setMdValue] = useState("***hello world!***");
+
   const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
 
@@ -23,16 +33,21 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSubmit({
-      text: cleanMessage(message),
+      content: markdownMode ? mdValue : cleanMessage(message),
+      type: markdownMode ? "markdown" : "text",
       tags: tags.map((tag) => {
         const existingTag = existingTags?.find(
           (existingTag) =>
             existingTag.tagName.toLowerCase() === tag.tagName.toLowerCase()
         );
-        return { tagName: tag.tagName, color: tag.color, tagId: existingTag?.id };
+        return {
+          tagName: tag.tagName,
+          color: tag.color,
+          tagId: existingTag?.id,
+        };
       }),
     });
-    setMessage("");
+    markdownMode ? setMdValue("") : setMessage("");
     setTags([]);
   };
 
@@ -56,16 +71,19 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   // include filter tag in tags if not already included
   useEffect(() => {
     setTags([]);
-    if(!selectedTag) return
-    
+    if (!selectedTag) return;
+
     if (!tags.find((t) => t.tagName === selectedTag?.tagName)) {
-      setTags([...tags, { color: selectedTag!.color, tagName: selectedTag!.tagName }]);
+      setTags([
+        ...tags,
+        { color: selectedTag!.color, tagName: selectedTag!.tagName },
+      ]);
     }
   }, [selectedTag]);
 
   return (
     <div className="h-26 mt-6 flex w-full flex-col rounded bg-[#36363B] px-3 py-2">
-      <div className="flex h-6 w-full flex-row">
+      <div className="flex w-full flex-row">
         {/* add tag button */}
         <Popover>
           <Popover.Button>
@@ -90,12 +108,12 @@ export const MessageInputBox = (props: MessageBoxProps) => {
                   />
                 </div>
               </form>
-              <div className="flex flex-row ml-2.5 mt-8 mb-3">
+              <div className="ml-2.5 mt-8 mb-3 flex flex-row">
                 {/* Search existing tags based on input */}
                 {tagInput.length > 0 &&
                   searchExistingTags().map((tag, idx) => (
                     <div
-                      className="my-auto ml-1.5 flex w-max rounded-2xl border py-0.5 px-3 text-sm text-white text-center"
+                      className="my-auto ml-1.5 flex w-max rounded-2xl border py-0.5 px-3 text-center text-sm text-white"
                       style={{
                         // replace last 2 characters with 0.2)
                         backgroundColor: tag.color.slice(0, -2) + "0.2)",
@@ -120,9 +138,10 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         </Popover>
 
         <img className="ml-1.5 inline h-6" src="/icons/plus.svg" />
+        <div className="max-w-[60%]">
         {tags.map((tag, idx) => (
           <div
-            className="my-auto ml-1.5 flex w-max rounded-2xl border py-0.5 pl-3 pr-2 text-sm text-white"
+            className="my-auto ml-1.5 mb-1.5 inline-flex w-max rounded-2xl border py-0.5 pl-3 pr-2 text-sm text-white"
             style={{
               // replace last 2 characters with 0.2)
               backgroundColor: tag?.color.slice(0, -2) + "0.2)",
@@ -139,17 +158,47 @@ export const MessageInputBox = (props: MessageBoxProps) => {
             </p>
           </div>
         ))}
+        </div>
+        {markdownMode ? (
+          <div
+            onClick={() => setMarkdownMode(!markdownMode)}
+            className="ml-auto h-6 cursor-pointer rounded-lg border border-green-700 px-2.5 text-sm text-zinc-300"
+          >
+            Markdown Mode
+            <span className="mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-green-500"></span>
+          </div>
+        ) : (
+          <div
+            onClick={() => setMarkdownMode(!markdownMode)}
+            className="ml-auto cursor-pointer h-6 rounded-lg border border-zinc-500 px-2.5 text-sm text-zinc-300"
+          >
+            Markdown Mode
+            <span className="mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-zinc-500"></span>
+          </div>
+        )}
       </div>
       <form className="flex flex-col" onSubmit={handleSubmit}>
-        <ContentEditable
-          className="mt-3 w-full resize-none bg-[#36363B] text-white outline-none"
-          innerRef={contentEditable}
-          html={message} // innerHTML of the editable div
-          disabled={false} // use true to disable editing
-          onChange={(e) => setMessage(e.target.value)}
-          tagName="div"
-          placeholder="Type your message..."
-        />
+        {!markdownMode ? (
+          <ContentEditable
+            className="mt-3.5 h-[70px] w-full resize-none bg-[#36363B] text-white outline-none"
+            innerRef={contentEditable}
+            html={message} // innerHTML of the editable div
+            disabled={false} // use true to disable editing
+            onChange={(e) => setMessage(e.target.value)}
+            tagName="div"
+            placeholder="Jot down your thoughts..."
+          />
+        ) : (
+          <div className="my-2 -ml-2 rounded-md bg-[#36363B]">
+            <MDEditor
+              value={mdValue}
+              preview="edit"
+              height={70}
+              hideToolbar={true}
+              onChange={(e: any) => setMdValue(e)}
+            />
+          </div>
+        )}
         <button type="submit" className="self-end">
           <img className="mr-2 h-7" src="/icons/send.svg" />
         </button>
