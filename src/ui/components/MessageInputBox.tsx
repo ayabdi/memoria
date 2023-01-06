@@ -117,7 +117,6 @@ export const MessageInputBox = (props: MessageBoxProps) => {
                       style={{
                         // replace last 2 characters with 0.2)
                         backgroundColor: tag.color.slice(0, -2) + "0.2)",
-                        // @ts-ignore
                         borderColor: tag.color,
                       }}
                       key={idx}
@@ -139,43 +138,40 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
         <img className="ml-1.5 inline h-6" src="/icons/plus.svg" />
         <div className="max-w-[60%]">
-        {tags.map((tag, idx) => (
-          <div
-            className="my-auto ml-1.5 mb-1.5 inline-flex w-max rounded-2xl border py-0.5 pl-3 pr-2 text-sm text-white"
-            style={{
-              // replace last 2 characters with 0.2)
-              backgroundColor: tag?.color.slice(0, -2) + "0.2)",
-              borderColor: tag?.color,
-            }}
-            key={idx}
-          >
-            {tag?.tagName}
-            <p
-              className="ml-1.5 cursor-pointer"
-              onClick={() => setTags(tags.filter((_, i) => i !== idx))}
+          {tags.map((tag, idx) => (
+            <div
+              className="my-auto ml-1.5 mb-1.5 inline-flex w-max rounded-2xl border py-0.5 pl-3 pr-2 text-sm text-white"
+              style={{
+                // replace last 2 characters with 0.2)
+                backgroundColor: tag?.color.slice(0, -2) + "0.2)",
+                borderColor: tag?.color,
+              }}
+              key={idx}
             >
-              ×
-            </p>
-          </div>
-        ))}
+              {tag?.tagName}
+              <p
+                className="ml-1.5 cursor-pointer"
+                onClick={() => setTags(tags.filter((_, i) => i !== idx))}
+              >
+                ×
+              </p>
+            </div>
+          ))}
         </div>
-        {markdownMode ? (
-          <button
-            onClick={() => setMarkdownMode(!markdownMode)}
-            className="ml-auto h-6 cursor-pointer rounded-xl border-[1.5px] border-green-700 px-2.5 text-sm text-zinc-200 hover:bg-zinc-700 shadow"
-          >
-            Markdown Mode
-            <span className="mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-green-600"></span>
-          </button>
-        ) : (
-          <button
-            onClick={() => setMarkdownMode(!markdownMode)}
-            className="ml-auto cursor-pointer h-6 rounded-xl border border-zinc-500 px-2.5 text-sm text-zinc-300 hover:bg-zinc-700 shadow"
-          >
-            Markdown Mode
-            <span className="mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-zinc-500"></span>
-          </button>
-        )}
+
+        <button
+          onClick={() => setMarkdownMode(!markdownMode)}
+          className={`ml-auto h-6 cursor-pointer rounded-xl border-[1.5px] px-2.5 text-sm text-zinc-200 shadow hover:bg-zinc-700 ${
+            markdownMode ? "border-green-700" : "border-zinc-500"
+          }`}
+        >
+          Markdown Mode
+          <span
+            className={`mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full  ${
+              markdownMode ? "bg-green-600" : "bg-zinc-500"
+            }`}
+          ></span>
+        </button>
       </div>
       <form className="flex flex-col" onSubmit={handleSubmit}>
         {!markdownMode ? (

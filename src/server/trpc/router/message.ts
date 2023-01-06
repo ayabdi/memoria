@@ -61,7 +61,6 @@ export const messageRouter = router({
           },
         },
       });
-      console.log(result);
       return result.reverse();
     }),
   messagesByTag: publicProcedure
