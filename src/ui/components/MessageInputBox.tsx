@@ -160,21 +160,21 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         ))}
         </div>
         {markdownMode ? (
-          <div
+          <button
             onClick={() => setMarkdownMode(!markdownMode)}
-            className="ml-auto h-6 cursor-pointer rounded-lg border border-green-700 px-2.5 text-sm text-zinc-300"
+            className="ml-auto h-6 cursor-pointer rounded-xl border-[1.5px] border-green-700 px-2.5 text-sm text-zinc-200 hover:bg-zinc-700 shadow"
           >
             Markdown Mode
-            <span className="mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-green-500"></span>
-          </div>
+            <span className="mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-green-600"></span>
+          </button>
         ) : (
-          <div
+          <button
             onClick={() => setMarkdownMode(!markdownMode)}
-            className="ml-auto cursor-pointer h-6 rounded-lg border border-zinc-500 px-2.5 text-sm text-zinc-300"
+            className="ml-auto cursor-pointer h-6 rounded-xl border border-zinc-500 px-2.5 text-sm text-zinc-300 hover:bg-zinc-700 shadow"
           >
             Markdown Mode
             <span className="mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-zinc-500"></span>
-          </div>
+          </button>
         )}
       </div>
       <form className="flex flex-col" onSubmit={handleSubmit}>
