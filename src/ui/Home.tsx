@@ -145,7 +145,7 @@ export const Home = () => {
   
   return (
     <>
-      <div className="mt-auto flex h-[calc(100vh_-_50px)] w-1/2 min-w-[700px] max-w-[900px] flex-col border-x border-slate-700 pb-5">
+      <div className="mt-auto flex h-[calc(100vh_-_50px)] w-1/2 min-w-[600px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
         {tagToFilter && (
           <div className="flex w-full border-b-[0.5px] border-slate-700 px-6 py-4 text-lg text-white">
             <img
@@ -167,7 +167,7 @@ export const Home = () => {
               {filteredMessages?.map((message, idx) => (
                 <div
                   id={message.id}
-                  className={idx === 0 ? "mt-auto px-6" : "px-6"}
+                  className={idx === 0 ? "mt-auto " : ""}
                 >
                   <MessageRow
                     content={message.content}
@@ -192,7 +192,7 @@ export const Home = () => {
             allMessages?.map((message, idx) => (
               <div
                 id={message.id}
-                className={idx === 0 ? "mt-auto px-6" : "px-6"}
+                className={idx === 0 ? "mt-auto " : ""}
               >
                 <MessageRow
                   content={message.content}
@@ -222,7 +222,7 @@ export const Home = () => {
                 tags={message.tags as Tag[]}
                 onClickTag={onClickTagToFilter}
                 key={idx}
-                className={messages?.length === 0 ? "mt-auto px-6" : "px-6"}
+                className={messages?.length === 0 ? "mt-auto " : ""}
               />
             ))}
         </div>

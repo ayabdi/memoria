@@ -17,7 +17,7 @@
 .w-md-editor-aree,
 .w-md-editor-input,
 .w-md-editor {
-  background-color: rgb(54 54 59 / 1) !important;
+  background-color: inherit!important;
   white-space: nowrap;
 }
 
@@ -26,7 +26,6 @@
 }
 
 .wmde-markdown{
-    --tw-border-opacity: 1;
-    background-color: rgb(39 39 42 / var(--tw-bg-opacity)) !important;
+    background-color: inherit !important;
     white-space: nowrap;
 }

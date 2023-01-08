@@ -162,7 +162,9 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         <button
           onClick={() => setMarkdownMode(!markdownMode)}
           className={`ml-auto h-6 cursor-pointer rounded-xl border-[1.5px] px-2.5 text-sm text-zinc-200 shadow hover:bg-zinc-700 ${
-            markdownMode ? "border-green-700" : "border-zinc-500"
+            markdownMode
+              ? "border-green-700 bg-green-700/10"
+              : "border-zinc-500"
           }`}
         >
           Markdown Mode
