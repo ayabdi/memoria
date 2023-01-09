@@ -4,14 +4,7 @@ import { Popover, Transition } from "@headlessui/react";
 import { CreateMessageSchema } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { cleanMessage } from "@/utils/funtions";
-import "@uiw/react-md-editor/markdown-editor.css";
-import "@uiw/react-markdown-preview/markdown.css";
-import dynamic from "next/dynamic";
-
-const MDEditor = dynamic(
-  () => import("@uiw/react-md-editor").then((mod) => mod.default),
-  { ssr: false }
-);
+import { MarkdownEditor } from "./Markdown";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema) => void;
@@ -188,7 +181,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
           />
         ) : (
           <div className="my-2 -ml-2 rounded-md bg-[#36363B]">
-            <MDEditor
+            <MarkdownEditor
               value={mdValue}
               preview="edit"
               height={70}
