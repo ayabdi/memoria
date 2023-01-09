@@ -1,19 +1,27 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import ContentEditable from "react-contenteditable";
 import { Popover, Transition } from "@headlessui/react";
-import { CreateMessageSchema } from "@/types/messages.schema";
+import { CreateMessageSchema, MessageType } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { cleanMessage } from "@/utils/funtions";
 import { MarkdownEditor } from "./Markdown";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema) => void;
+  messageToEdit?: MessageType;
+  setMessageToEdit?: Dispatch<SetStateAction<string | null>>;
   existingTags?: Tag[];
   tagToFilter?: Tag | null;
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
-  const { existingTags, onSubmit, tagToFilter: selectedTag } = props;
+  const {
+    existingTags,
+    onSubmit,
+    tagToFilter: selectedTag,
+    messageToEdit,
+    setMessageToEdit
+  } = props;
   const [message, setMessage] = React.useState("");
   const [markdownMode, setMarkdownMode] = useState(false);
   const [mdValue, setMdValue] = useState("***hello world!***");
@@ -44,7 +52,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
     setTags([]);
   };
 
-  const submitTags = (
+  const submitTag = (
     e: React.FormEvent<HTMLFormElement> | React.MouseEvent
   ) => {
     e.preventDefault();
@@ -74,8 +82,20 @@ export const MessageInputBox = (props: MessageBoxProps) => {
     }
   }, [selectedTag]);
 
+  useEffect(() => {
+    if (!messageToEdit) return;
+
+    if (messageToEdit.type === "markdown") {
+      setMdValue(messageToEdit.content);
+      setMarkdownMode(true);
+    } else {
+      setMessage(messageToEdit.content);
+      setMarkdownMode(false);
+    }
+  }, []);
+
   return (
-    <div className="h-26 mt-6 flex w-full flex-col rounded bg-[#36363B] px-3 py-2">
+    <div className="h-26 flex w-full flex-col rounded bg-[#36363B] px-3 py-2">
       <div className="flex w-full flex-row">
         {/* add tag button */}
         <Popover>
@@ -85,7 +105,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
           <Popover.Panel className="absolute z-10">
             <div className="absolute  -left-10 -top-[110px] z-10 my-2 min-h-[66px] w-80 origin-bottom-right rounded-md border-[0.5px] border-zinc-600 bg-[#36363B] text-zinc-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <form onSubmit={submitTags}>
+              <form onSubmit={submitTag}>
                 <div className="flex h-6 flex-row p-4">
                   <input
                     className="h-9 w-full rounded-md border-[0.5px] border-zinc-600 bg-zinc-800 px-3 py-2 pb-3 outline-none"
@@ -97,7 +117,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
                   <img
                     className="ml-2 mt-0.5 inline h-7 cursor-pointer"
                     src="/icons/plus.svg"
-                    onClick={(e) => submitTags(e)}
+                    onClick={(e) => submitTag(e)}
                   />
                 </div>
               </form>
@@ -184,15 +204,32 @@ export const MessageInputBox = (props: MessageBoxProps) => {
             <MarkdownEditor
               value={mdValue}
               preview="edit"
-              height={70}
+              className="min-h-[70px] h-max max-h-[300px]"
+              height={0}
               hideToolbar={true}
               onChange={(e: any) => setMdValue(e)}
             />
           </div>
         )}
-        <button type="submit" className="self-end">
-          <img className="mr-2 h-7" src="/icons/send.svg" />
-        </button>
+        {messageToEdit ? (
+          <div className="mr-1 flex">
+            <button 
+            onClick={() => setMessageToEdit?.(null)}
+            className="ml-auto mr-2 rounded border border-zinc-500 bg-transparent py-0.5 px-3 text-sm font-semibold text-white  hover:bg-white/5 hover:text-white">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="rounded bg-green-700 py-0.5 px-3 text-sm font-semibold text-white hover:bg-green-700/80"
+            >
+              Save
+            </button>
+          </div>
+        ) : (
+          <button type="submit" className="self-end">
+            <img className="mr-2 h-7" src="/icons/send.svg" />
+          </button>
+        )}
       </form>
     </div>
   );

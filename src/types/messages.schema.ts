@@ -1,5 +1,12 @@
 
+import { Message, Tag, TagsOnMessages } from "@prisma/client";
 import { z } from "zod";
+
+export interface MessageType extends Message {
+    tags: (TagsOnMessages & {
+        tag: Tag;
+    })[];
+}
 
 export const CreateTagSchema = z.object({
     color: z.string(),

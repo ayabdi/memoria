@@ -4,9 +4,10 @@ import { trpc } from "../utils/trpc";
 import { MessageInputBox } from "@/ui/components/MessageInputBox";
 import { MessageRow } from "@/ui/components/MessageRow";
 import { useEffect, useRef, useState } from "react";
-import { CreateMessageSchema } from "@/types/messages.schema";
+import { CreateMessageSchema, MessageType } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { MoonLoader } from "react-spinners";
+import Avatar from "react-avatar";
 
 const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
   if (!dateY) return false;
@@ -24,25 +25,13 @@ export const Home = () => {
     data: messages,
     refetch,
     isFetched,
+    isLoading,
   } = trpc.message.allMessages.useQuery({
     page: pageNo,
   });
   const [allMessages, setAllMessages] = useState<typeof messages>([]);
 
   const { data: tags } = trpc.message.allTags.useQuery();
-
-  const { mutate } = trpc.message.createMessage.useMutation();
-  const createMessage = async (message: CreateMessageSchema) => {
-    setUnsentMessages((prev) => [...prev, message]);
-    setPageNo(1);
-    mutate(message, {
-      onSuccess: () => refetch().then(({data}) => { 
-        removeUnsentMessage(message)
-        if(data?.length) setAllMessages(data)
-      }),
-      onError: () => removeUnsentMessage(message),
-    });
-  };
 
   // to display messages that are not yet sent to the server (optimistic UI)
   const [unsentMessages, setUnsentMessages] = useState<CreateMessageSchema[]>(
@@ -53,6 +42,20 @@ export const Home = () => {
       const idx = prev.indexOf(message);
       if (idx === -1) return prev;
       return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+    });
+  };
+
+  const { mutate } = trpc.message.createMessage.useMutation();
+  const createMessage = async (message: CreateMessageSchema) => {
+    setUnsentMessages((prev) => [...prev, message]);
+    setPageNo(1);
+    mutate(message, {
+      onSuccess: () =>
+        refetch().then(({ data }) => {
+          removeUnsentMessage(message);
+          if (data?.length) setAllMessages(data);
+        }),
+      onError: () => removeUnsentMessage(message),
     });
   };
 
@@ -115,16 +118,6 @@ export const Home = () => {
       });
   }, [pageNo]);
 
-  // refetch when tag is selected
-  useEffect(() => {
-    if (tagToFilter) {
-      refetch().then(({ data }) => {
-        if (data?.length) setAllMessages(data);
-        else setHasMoreMessages(false);
-      });
-    }
-  }, [tagToFilter]);
-
   const onClickTagToFilter = (tag: Tag) => {
     setTagToFilter(tag);
     setPageNo(1);
@@ -142,7 +135,7 @@ export const Home = () => {
     if (!tagToFilter) return scrollToBottom();
     refetchFilteredMessages();
   }, [tagToFilter]);
-  
+
   return (
     <>
       <div className="mt-auto flex h-[calc(100vh_-_50px)] w-1/2 min-w-[600px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
@@ -162,55 +155,11 @@ export const Home = () => {
           ref={chatContainerRef}
           className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
         >
-          {tagToFilter ? (
-            <>
-              {filteredMessages?.map((message, idx) => (
-                <div
-                  id={message.id}
-                  className={idx === 0 ? "mt-auto " : ""}
-                >
-                  <MessageRow
-                    content={message.content}
-                    createdAt={message.createdAt}
-                    type={message.type}
-                    from={message.from}
-                    tags={message.tags.map((tag) => tag.tag)}
-                    key={message.id}
-                    onClickTag={onClickTagToFilter}
-                    className={idx === 0 ? "mt-auto" : ""}
-                  />
-                </div>
-              ))}
-              <MoonLoader
-                color="#fff"
-                size={70}
-                className="m-auto"
-                loading={isFilterLoading}
-              />
-            </>
-          ) : (
-            allMessages?.map((message, idx) => (
-              <div
-                id={message.id}
-                className={idx === 0 ? "mt-auto " : ""}
-              >
-                <MessageRow
-                  content={message.content}
-                  createdAt={message.createdAt}
-                  from={message.from}
-                  type={message.type}
-                  tags={message.tags.map((tag) => tag.tag)}
-                  key={message.id}
-                  onClickTag={onClickTagToFilter}
-                  hideLabels={isWithinFiveMinutes(
-                    message.createdAt,
-                    allMessages[idx - 1]?.createdAt
-                  )}
-                  className={idx === 0 ? "mt-auto" : ""}
-                />
-              </div>
-            ))
-          )}
+          <DisplayMessages
+            messages={tagToFilter ? filteredMessages! : allMessages!}
+            onClickTag={onClickTagToFilter}
+            isLoading={tagToFilter ? isFilterLoading : isLoading}
+          />
 
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
@@ -226,7 +175,7 @@ export const Home = () => {
               />
             ))}
         </div>
-        <div className="flex-0 px-6">
+        <div className="flex-0 px-6 mt-4">
           <MessageInputBox
             existingTags={tags}
             tagToFilter={tagToFilter}
@@ -234,6 +183,57 @@ export const Home = () => {
           />
         </div>
       </div>
+    </>
+  );
+};
+
+interface DisplayMessagesProps {
+  messages: MessageType[];
+  onClickTag: (tag: Tag) => void;
+  isLoading: boolean;
+}
+const DisplayMessages = (props: DisplayMessagesProps) => {
+  const { messages, onClickTag, isLoading } = props;
+  const [messageToEdit, setMessageToEdit] = useState<string | null>(null);
+
+  return (
+    <>
+      {messages?.map((message, idx) => (
+        <div id={message.id} className={idx === 0 ? "mt-auto " : ""}>
+          {messageToEdit && messageToEdit === message.id ? (
+            <div className="flex px-6">
+              <Avatar
+                name={message.from}
+                size="50"
+                className="mb-auto mt-1 mr-4 rounded-md"
+              />
+              <MessageInputBox
+                onSubmit={() => null}
+                messageToEdit={message}
+                setMessageToEdit={setMessageToEdit}
+              />
+            </div>
+          ) : (
+            <MessageRow
+              content={message.content}
+              createdAt={message.createdAt}
+              type={message.type}
+              from={message.from}
+              tags={message.tags.map((tag) => tag.tag)}
+              key={message.id}
+              setMessageToEdit={() => setMessageToEdit(message.id)}
+              onClickTag={onClickTag}
+              className={idx === 0 ? "mt-auto" : ""}
+            />
+          )}
+        </div>
+      ))}
+      <MoonLoader
+        color="#fff"
+        size={70}
+        className="m-auto"
+        loading={isLoading}
+      />
     </>
   );
 };
