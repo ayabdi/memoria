@@ -1,26 +1,29 @@
-import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import ContentEditable from "react-contenteditable";
 import { Popover, Transition } from "@headlessui/react";
 import { CreateMessageSchema, MessageType } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { cleanMessage } from "@/utils/funtions";
 import { MarkdownEditor } from "./Markdown";
+import { useAtom } from "jotai";
+import { allTagsAtom, messageToEditAtom } from "../store";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema) => void;
-  messageToEdit?: MessageType;
-  setMessageToEdit?: Dispatch<SetStateAction<string | null>>;
   existingTags?: Tag[];
   tagToFilter?: Tag | null;
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
   const {
-    existingTags,
     onSubmit,
-    tagToFilter: selectedTag,
-    messageToEdit,
-    setMessageToEdit
+    tagToFilter: selectedTag
   } = props;
   const [message, setMessage] = React.useState("");
   const [markdownMode, setMarkdownMode] = useState(false);
@@ -28,6 +31,8 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
   const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
+  const [allTags] = useAtom(allTagsAtom);
 
   const contentEditable = React.useRef<HTMLDivElement>(null);
 
@@ -37,9 +42,9 @@ export const MessageInputBox = (props: MessageBoxProps) => {
       content: markdownMode ? mdValue : cleanMessage(message),
       type: markdownMode ? "markdown" : "text",
       tags: tags.map((tag) => {
-        const existingTag = existingTags?.find(
-          (existingTag) =>
-            existingTag.tagName.toLowerCase() === tag.tagName.toLowerCase()
+        const existingTag = allTags?.find(
+          (t) =>
+            t.tagName.toLowerCase() === tag.tagName.toLowerCase()
         );
         return {
           tagName: tag.tagName,
@@ -61,8 +66,8 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   };
 
   const searchExistingTags = () => {
-    if (!existingTags) return [];
-    return existingTags
+    if (!allTags) return [];
+    return allTags
       .filter((tag) => !tags.find((t) => t.tagName === tag.tagName))
       .filter((tag) =>
         tag.tagName.toLowerCase().includes(tagInput.toLowerCase())
@@ -84,7 +89,12 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
   useEffect(() => {
     if (!messageToEdit) return;
-
+    setTags(
+      messageToEdit!.tags.map((tag) => ({
+        color: tag.tag.color,
+        tagName: tag.tag.tagName,
+      }))
+    );
     if (messageToEdit.type === "markdown") {
       setMdValue(messageToEdit.content);
       setMarkdownMode(true);
@@ -204,7 +214,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
             <MarkdownEditor
               value={mdValue}
               preview="edit"
-              className="min-h-[70px] h-max max-h-[300px]"
+              className="h-max max-h-[300px] min-h-[70px]"
               height={0}
               hideToolbar={true}
               onChange={(e: any) => setMdValue(e)}
@@ -213,9 +223,10 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         )}
         {messageToEdit ? (
           <div className="mr-1 flex">
-            <button 
-            onClick={() => setMessageToEdit?.(null)}
-            className="ml-auto mr-2 rounded border border-zinc-500 bg-transparent py-0.5 px-3 text-sm font-semibold text-white  hover:bg-white/5 hover:text-white">
+            <button
+              onClick={() => setMessageToEdit?.(null)}
+              className="ml-auto mr-2 rounded border border-zinc-500 bg-transparent py-0.5 px-3 text-sm font-semibold text-white  hover:bg-white/5 hover:text-white"
+            >
               Cancel
             </button>
             <button

@@ -18,6 +18,18 @@ export const CreateMessageSchema = z.object({
     type: z.string(),
     tags: z.array(CreateTagSchema).optional(),
 })
+export const EditMessageSchema = z.object({
+    content: z.string(),
+    type: z.string(),
+    tags: z.array(CreateTagSchema).optional(),
+    messageId: z.string(),
+})
+export const GetMessagesSchema = z.object({
+    page: z.number().optional(),
+    tagId: z.string().optional(),
+}).optional()
 
+export type EditMessageSchema = z.infer<typeof EditMessageSchema>;
+export type GetMessagesSchema = z.infer<typeof GetMessagesSchema>;
 export type CreateTagSchema = z.infer<typeof CreateTagSchema>;
 export type CreateMessageSchema = z.infer<typeof CreateMessageSchema>;

@@ -3,40 +3,55 @@ import { useSession } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 import { MessageInputBox } from "@/ui/components/MessageInputBox";
 import { MessageRow } from "@/ui/components/MessageRow";
-import { useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { CreateMessageSchema, MessageType } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { MoonLoader } from "react-spinners";
+import { useAtom } from "jotai";
 import Avatar from "react-avatar";
-
-const isWithinFiveMinutes = (dateX: Date, dateY: Date | undefined) => {
-  if (!dateY) return false;
-  const diff = Math.abs(dateX.getTime() - dateY.getTime());
-  return diff < 5 * 60 * 1000;
-};
+import { allTagsAtom, messageToEditAtom } from "./store";
 
 export const Home = () => {
+  const user = useSession().data?.user;
   const [pageNo, setPageNo] = useState<number>(1);
   const [tagToFilter, setTagToFilter] = useState<Tag | null>(null);
-
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
+  const [allMessages, setAllMessages] = useState<typeof messages>([]);
+
+  // to display messages that are not yet sent to the server (optimistic UI)
+  const [unsentMessages, setUnsentMessages] = useState<CreateMessageSchema[]>(
+    []
+  );
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     data: messages,
     refetch,
     isFetched,
     isLoading,
-  } = trpc.message.allMessages.useQuery({
-    page: pageNo,
-  });
-  const [allMessages, setAllMessages] = useState<typeof messages>([]);
-
-  const { data: tags } = trpc.message.allTags.useQuery();
-
-  // to display messages that are not yet sent to the server (optimistic UI)
-  const [unsentMessages, setUnsentMessages] = useState<CreateMessageSchema[]>(
-    []
+  } = trpc.message.allMessages.useQuery(
+    { page: pageNo },
+    {
+      onSuccess: (data) => {
+        if (data?.length) setAllMessages((prev) => [...data, ...prev!]);
+        else setHasMoreMessages(false);
+      }
+    }
   );
+  const [allTags, setAllTags] = useAtom(allTagsAtom);
+  const { data: tags } = trpc.message.allTags.useQuery(void 0, {
+    onSuccess: (data) => setAllTags(data),
+  });
+
+  // to display messages that are filtered by a tag
+  const { data: filteredMessages, isLoading: isFilterLoading } =
+    trpc.message.messagesByTag.useQuery(
+      { tagId: tagToFilter?.id },
+      { enabled: !!tagToFilter, onSuccess: () => scrollToBottom() }
+    );
+
+  const { mutate } = trpc.message.createMessage.useMutation();
+
   const removeUnsentMessage = (message: CreateMessageSchema) => {
     setUnsentMessages((prev) => {
       const idx = prev.indexOf(message);
@@ -45,21 +60,17 @@ export const Home = () => {
     });
   };
 
-  const { mutate } = trpc.message.createMessage.useMutation();
   const createMessage = async (message: CreateMessageSchema) => {
     setUnsentMessages((prev) => [...prev, message]);
     setPageNo(1);
     mutate(message, {
       onSuccess: () =>
         refetch().then(({ data }) => {
-          removeUnsentMessage(message);
           if (data?.length) setAllMessages(data);
         }),
-      onError: () => removeUnsentMessage(message),
+      onSettled: () => removeUnsentMessage(message),
     });
   };
-
-  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToLastMessage = () => {
     if (!messages?.length) return;
@@ -76,15 +87,15 @@ export const Home = () => {
     chatContainerRef.current?.scrollTo(0, scroll);
   };
 
-  // set all messages when the page is loaded for the first time
-  useEffect(() => {
-    if (isFetched && pageNo === 1) setAllMessages(messages);
-  }, [isFetched]);
+  const onTagFilter = (tag: Tag) => {
+    setTagToFilter(tag);
+    setPageNo(1);
+  };
 
   // scroll to the last fetched message every page load
   // this to prevent abrupt scrolling to the top when new messages are fetched
   useEffect(() => {
-    if (messages) scrollToLastMessage();
+    if (allMessages?.length) scrollToLastMessage();
   }, [allMessages]);
 
   // scroll to the bottom when new messages are added but not yet sent to the server
@@ -92,49 +103,24 @@ export const Home = () => {
     if (unsentMessages.length) scrollToBottom();
   }, [unsentMessages]);
 
-  const user = useSession().data?.user;
-
   // trigger page number change when user scrolls to top of page
   // would ideally refetch and update pagNo in one go, but cant pass input to refetch function for some reason
   useEffect(() => {
     if (!isFetched || !chatContainerRef.current) return;
     const handleScroll = () => {
-      if (chatContainerRef.current?.scrollTop === 0 && hasMoreMessages) {
+      if (chatContainerRef.current?.scrollTop === 0 && hasMoreMessages)
         setPageNo((prev) => prev + 1);
-      }
     };
     chatContainerRef.current.addEventListener("scroll", handleScroll);
     return () => {
       chatContainerRef.current?.removeEventListener("scroll", handleScroll);
     };
-  }, [isFetched, allMessages, messages]);
+  }, [isFetched]);
 
   // refetch when page number changes
   useEffect(() => {
-    if (pageNo > 1)
-      refetch().then(({ data }) => {
-        if (data?.length) setAllMessages((prev) => [...data, ...prev!]);
-        else setHasMoreMessages(false);
-      });
+    if (pageNo > 1) refetch();
   }, [pageNo]);
-
-  const onClickTagToFilter = (tag: Tag) => {
-    setTagToFilter(tag);
-    setPageNo(1);
-  };
-
-  const {
-    data: filteredMessages,
-    refetch: refetchFilteredMessages,
-    isLoading: isFilterLoading,
-  } = trpc.message.messagesByTag.useQuery({
-    tagId: tagToFilter?.id,
-  });
-
-  useEffect(() => {
-    if (!tagToFilter) return scrollToBottom();
-    refetchFilteredMessages();
-  }, [tagToFilter]);
 
   return (
     <>
@@ -157,8 +143,9 @@ export const Home = () => {
         >
           <DisplayMessages
             messages={tagToFilter ? filteredMessages! : allMessages!}
-            onClickTag={onClickTagToFilter}
+            onClickTag={onTagFilter}
             isLoading={tagToFilter ? isFilterLoading : isLoading}
+            setMessages={setAllMessages}
           />
 
           {unsentMessages &&
@@ -169,13 +156,13 @@ export const Home = () => {
                 from={user?.name!}
                 type={message.type}
                 tags={message.tags as Tag[]}
-                onClickTag={onClickTagToFilter}
+                onClickTag={onTagFilter}
                 key={idx}
                 className={messages?.length === 0 ? "mt-auto " : ""}
               />
             ))}
         </div>
-        <div className="flex-0 px-6 mt-4">
+        <div className="flex-0 mt-4 px-6">
           <MessageInputBox
             existingTags={tags}
             tagToFilter={tagToFilter}
@@ -191,16 +178,30 @@ interface DisplayMessagesProps {
   messages: MessageType[];
   onClickTag: (tag: Tag) => void;
   isLoading: boolean;
+  setMessages: Dispatch<SetStateAction<MessageType[] | undefined>>;
 }
 const DisplayMessages = (props: DisplayMessagesProps) => {
-  const { messages, onClickTag, isLoading } = props;
-  const [messageToEdit, setMessageToEdit] = useState<string | null>(null);
+  const { messages, onClickTag, isLoading, setMessages } = props;
+  const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
+  const { mutate: editMessage } = trpc.message.editMessage.useMutation({
+    onSuccess: (data) =>
+      // update message in messages array
+      setMessages &&
+      setMessages((prev) => {
+        if (!prev) return prev;
+        const index = prev.findIndex((m) => m.id === data.id);
+        if (index === -1) return prev;
+        const newMessages = [...prev];
+        newMessages[index] = data;
+        return newMessages;
+      }),
+  });
 
   return (
     <>
       {messages?.map((message, idx) => (
-        <div id={message.id} className={idx === 0 ? "mt-auto " : ""}>
-          {messageToEdit && messageToEdit === message.id ? (
+        <div id={message.id} key={idx} className={idx === 0 ? "mt-auto " : ""}>
+          {messageToEdit && messageToEdit.id === message.id ? (
             <div className="flex px-6">
               <Avatar
                 name={message.from}
@@ -208,9 +209,10 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
                 className="mb-auto mt-1 mr-4 rounded-md"
               />
               <MessageInputBox
-                onSubmit={() => null}
-                messageToEdit={message}
-                setMessageToEdit={setMessageToEdit}
+                onSubmit={(m: CreateMessageSchema) => {
+                  editMessage({ ...m, messageId: message.id });
+                  setMessageToEdit(null);
+                }}
               />
             </div>
           ) : (
@@ -221,7 +223,7 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
               from={message.from}
               tags={message.tags.map((tag) => tag.tag)}
               key={message.id}
-              setMessageToEdit={() => setMessageToEdit(message.id)}
+              setMessageToEdit={() => setMessageToEdit(message)}
               onClickTag={onClickTag}
               className={idx === 0 ? "mt-auto" : ""}
             />
@@ -232,7 +234,7 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
         color="#fff"
         size={70}
         className="m-auto"
-        loading={isLoading}
+        loading={isLoading && !messages?.length}
       />
     </>
   );

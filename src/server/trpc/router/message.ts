@@ -1,5 +1,5 @@
 import { router, publicProcedure } from "../trpc";
-import { CreateMessageSchema } from "@/types/messages.schema";
+import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema } from "@/types/messages.schema";
 import { z } from "zod";
 export const messageRouter = router({
   createMessage: publicProcedure
@@ -27,11 +27,7 @@ export const messageRouter = router({
     }),
 
   allMessages: publicProcedure
-    .input(
-      z
-        .object({ page: z.number().optional(), tagId: z.string().optional() })
-        .optional()
-    )
+    .input(GetMessagesSchema)
     .query(async ({ ctx, input }) => {
       const page = input?.page || 1;
       const take = 40;
@@ -64,11 +60,9 @@ export const messageRouter = router({
       return result.reverse();
     }),
   messagesByTag: publicProcedure
-    .input(
-      z.object({ tagId: z.string().optional(), page: z.number().optional() })
-    )
+    .input(GetMessagesSchema)
     .query(async ({ ctx, input }) => {
-      if (!input.tagId) return [];
+      if (!input?.tagId) return [];
       const page = input.page || 1;
       const take = 40;
       const skip = (page - 1) * take;
@@ -102,6 +96,48 @@ export const messageRouter = router({
     return ctx.prisma.tag.findMany({
       where: {
         userId: ctx.session?.user?.id,
+      },
+    });
+  }),
+
+  deleteMessage: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    return ctx.prisma.message.delete({
+      where: {
+        id: input,
+      },
+    });
+  }),
+
+  editMessage: publicProcedure.input(EditMessageSchema).mutation(async ({ ctx, input }) => {
+    const tagsToAdd = input.tags?.map((tag) => {
+      if (tag.tagId) return { tag: { connect: { id: tag.tagId } } };
+      return {
+        tag: { create: { tagName: tag.tagName, color: tag.color, userId: ctx.session?.user?.id! } },
+      };
+    });
+    // reset tags
+
+    await ctx.prisma.tagsOnMessages.deleteMany({
+      where: {
+        messageId: input.messageId,
+      },
+    });
+
+    return ctx.prisma.message.update({
+      where: {
+        id: input.messageId,
+      },
+      data: {
+        content: input.content,
+        type: input.type,
+        ...(tagsToAdd?.length && { tags: { create: tagsToAdd } }),
+      },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     });
   }),
