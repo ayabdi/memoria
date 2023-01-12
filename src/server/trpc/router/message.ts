@@ -101,7 +101,13 @@ export const messageRouter = router({
   }),
 
   deleteMessage: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    return ctx.prisma.message.delete({
+    // delete all tag links
+    await ctx.prisma.tagsOnMessages.deleteMany({
+      where: {
+        messageId: input,
+      },
+    });
+    return await ctx.prisma.message.delete({
       where: {
         id: input,
       },

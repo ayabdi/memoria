@@ -3,15 +3,13 @@ import { useSession } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 import { MessageInputBox } from "@/ui/components/MessageInputBox";
 import { MessageRow } from "@/ui/components/MessageRow";
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CreateMessageSchema,
   EditMessageSchema,
   MessageSchema,
-  ServerMessageType,
   TagSchema,
 } from "@/types/messages.schema";
-import { Tag } from "@prisma/client";
 import { MoonLoader } from "react-spinners";
 import { useAtom } from "jotai";
 import Avatar from "react-avatar";
@@ -175,11 +173,8 @@ export const Home = () => {
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
               <MessageRow
-                content={message.content}
-                createdAt={new Date()}
-                from={user?.name!}
-                type={message.type}
-                tags={message.tags as Tag[]}
+                message={message}
+                isLoadingMessage={true}
                 onClickTag={onTagFilter}
                 key={idx}
                 className={messages?.length === 0 ? "mt-auto " : ""}
@@ -245,7 +240,7 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
                 className="mb-auto mt-1 mr-4 rounded-md"
               />
               <MessageInputBox
-                onSubmit={(m: MessageSchema) => {
+                onSubmit={(m: CreateMessageSchema | EditMessageSchema) => {
                   handleEdit(m as EditMessageSchema);
                   setMessageToEdit(null);
                 }}
@@ -254,12 +249,8 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
             </div>
           ) : (
             <MessageRow
-              content={message.content}
-              createdAt={message.createdAt!}
-              type={message.type}
-              from={message.from}
-              tags={message.tags}
-              key={message.id}
+              message={message}
+              key={message.id + idx.toString()}
               setMessageToEdit={() => setMessageToEdit(message)}
               deleteMessage={() => handleDelete(message.id!)}
               onClickTag={onClickTag}

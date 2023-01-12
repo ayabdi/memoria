@@ -22,7 +22,7 @@ import { trpc } from "@/utils/trpc";
 import { useSession } from "next-auth/react";
 
 interface MessageBoxProps {
-  onSubmit: (message: MessageSchema) => void;
+  onSubmit: (message: CreateMessageSchema | EditMessageSchema) => void;
   mode: "edit" | "create";
   tagToFilter?: TagSchema | null;
 }

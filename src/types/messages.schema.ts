@@ -28,19 +28,8 @@ export const MessageSchema = z.object({
     tags: z.array(TagSchema).optional(),
 });
 
-export const CreateMessageSchema = z.object({
-    content: z.string(),
-    type: z.string(),
-    from: z.string(),
-    tags: z.array(TagSchema).optional(),
-})
-export const EditMessageSchema = z.object({
-    content: z.string(),
-    type: z.string(),
-    tags: z.array(TagSchema).optional(),
-    from: z.string(),
-    id: z.string(),
-})
+export const CreateMessageSchema = MessageSchema.omit({id: true})
+export const EditMessageSchema = MessageSchema
 
 export const GetMessagesSchema = z.object({
     page: z.number().optional(),
