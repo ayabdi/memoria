@@ -4,19 +4,24 @@ import { trpc } from "../utils/trpc";
 import { MessageInputBox } from "@/ui/components/MessageInputBox";
 import { MessageRow } from "@/ui/components/MessageRow";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
-import { CreateMessageSchema, MessageType } from "@/types/messages.schema";
+import {
+  CreateMessageSchema,
+  EditMessageSchema,
+  MessageType,
+} from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { MoonLoader } from "react-spinners";
 import { useAtom } from "jotai";
 import Avatar from "react-avatar";
-import { messageToEditAtom } from "./store";
+import { allMessagesAtom, messageToEditAtom } from "./store";
 
 export const Home = () => {
   const user = useSession().data?.user;
   const [pageNo, setPageNo] = useState<number>(1);
   const [tagToFilter, setTagToFilter] = useState<Tag | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
-  const [allMessages, setAllMessages] = useState<MessageType[]>([]);
+  const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
+  const [initialLoad, setInitialLoad] = useState<boolean>(false);
 
   // to display messages that are not yet sent to the server (optimistic UI)
   const [unsentMessages, setUnsentMessages] = useState<CreateMessageSchema[]>(
@@ -95,14 +100,16 @@ export const Home = () => {
   // scroll to the last fetched message every page load
   // this to prevent abrupt scrolling to the top when new messages are fetched
   useEffect(() => {
-    if (!allMessages?.length) return;
+    if (!allMessages?.length || !isFetched) return;
 
     // scroll to last message when user scrolls to top of page
     if (pageNo > 1) scrollToLastMessage();
 
     // hack to keep messages view scrolled to the bottom on initial load
     // this is done because markdown messages take a while to render then screws up the scroll position
+    if (initialLoad) return;
     const interval = setInterval(() => {
+      setInitialLoad(true);
       scrollToBottom();
     }, 10);
     setTimeout(() => {
@@ -161,7 +168,6 @@ export const Home = () => {
             messages={tagToFilter ? filteredMessages! : allMessages!}
             onClickTag={onTagFilter}
             isLoading={tagToFilter ? isFilterLoading : isLoading}
-            setMessages={setAllMessages}
           />
 
           {unsentMessages &&
@@ -179,7 +185,11 @@ export const Home = () => {
             ))}
         </div>
         <div className="flex-0 mt-4 px-6">
-          <MessageInputBox mode="create" tagToFilter={tagToFilter} onSubmit={createMessage} />
+          <MessageInputBox
+            mode="create"
+            tagToFilter={tagToFilter}
+            onSubmit={createMessage}
+          />
         </div>
       </div>
     </>
@@ -190,16 +200,16 @@ interface DisplayMessagesProps {
   messages: MessageType[];
   onClickTag: (tag: Tag) => void;
   isLoading: boolean;
-  setMessages: Dispatch<SetStateAction<MessageType[]>>;
 }
 const DisplayMessages = (props: DisplayMessagesProps) => {
-  const { messages, onClickTag, isLoading, setMessages } = props;
+  const { messages, onClickTag, isLoading } = props;
+  const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
+
   const { mutate: editMessage } = trpc.message.editMessage.useMutation({
     onSuccess: (data) =>
       // update message in messages array
-      setMessages &&
-      setMessages((prev) => {
+      setAllMessages((prev) => {
         if (!prev) return prev;
         const index = prev.findIndex((m) => m.id === data.id);
         if (index === -1) return prev;
@@ -208,6 +218,18 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
         return newMessages;
       }),
   });
+  const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
+  const handleDelete = (id: string) => {
+    deleteMessage(id);
+    setAllMessages((prev) => {
+      if (!prev) return prev;
+      const index = prev.findIndex((m) => m.id === id);
+      if (index === -1) return prev;
+      const newMessages = [...prev];
+      newMessages.splice(index, 1);
+      return newMessages;
+    });
+  };
 
   return (
     <>
@@ -221,8 +243,8 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
                 className="mb-auto mt-1 mr-4 rounded-md"
               />
               <MessageInputBox
-                onSubmit={(m: CreateMessageSchema) => {
-                  editMessage({ ...m, messageId: message.id });
+                onSubmit={(m: EditMessageSchema | CreateMessageSchema) => {
+                  editMessage(m as EditMessageSchema);
                   setMessageToEdit(null);
                 }}
                 mode="edit"
@@ -237,6 +259,7 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
               tags={message.tags.map((tag) => tag.tag)}
               key={message.id}
               setMessageToEdit={() => setMessageToEdit(message)}
+              deleteMessage={() => handleDelete(message.id)}
               onClickTag={onClickTag}
               className={idx === 0 ? "mt-auto" : ""}
             />

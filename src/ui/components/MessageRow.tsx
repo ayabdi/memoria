@@ -4,6 +4,7 @@ import Avatar from "react-avatar";
 import { Tag } from "@prisma/client";
 import { Popover } from "@headlessui/react";
 import { Markdown } from "./Markdown";
+import { trpc } from "@/utils/trpc";
 
 interface MessageRowProps {
   content: string;
@@ -12,13 +13,14 @@ interface MessageRowProps {
   tags: Tag[];
   type: string;
   setMessageToEdit?:()=>void;
+  deleteMessage?:()=>void;
   onClickTag?: (tag: Tag) => void;
   hideLabels?: boolean;
   className?: string;
 }
 
 export const MessageRow = (props: MessageRowProps) => {
-  const { content, type, from, createdAt, tags, className, onClickTag, setMessageToEdit } = props;
+  const { content, type, from, createdAt, tags, className, onClickTag, setMessageToEdit, deleteMessage } = props;
 
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     hour: "numeric",
@@ -48,17 +50,14 @@ export const MessageRow = (props: MessageRowProps) => {
             {showOptions && (
               <div className="h-50px z-100 relative right-0 ml-auto  h-max origin-bottom-right   rounded-md border-[0.3px] border-zinc-600 bg-[#36363B] py-1 text-zinc-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                 <img
-                  className="mx-1.5 inline h-5 cursor-pointer"
-                  src="/icons/tag.svg"
-                />
-                <img
-                  className="mr-1.5 inline h-5 cursor-pointer text-slate-600"
+                  className="mx-1.5 inline h-5 cursor-pointer text-slate-600"
                   src="/icons/edit.svg"
                   onClick={setMessageToEdit}
                 />
                 <img
                   className="mr-1.5 inline h-5 cursor-pointer"
                   src="/icons/delete.svg"
+                  onClick={deleteMessage}
                 />
               </div>
             )}
