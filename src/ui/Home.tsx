@@ -16,7 +16,7 @@ export const Home = () => {
   const [pageNo, setPageNo] = useState<number>(1);
   const [tagToFilter, setTagToFilter] = useState<Tag | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
-  const [allMessages, setAllMessages] = useState<typeof messages>([]);
+  const [allMessages, setAllMessages] = useState<MessageType[]>([]);
 
   // to display messages that are not yet sent to the server (optimistic UI)
   const [unsentMessages, setUnsentMessages] = useState<CreateMessageSchema[]>(
@@ -35,7 +35,8 @@ export const Home = () => {
       onSuccess: (data) => {
         if (data?.length) setAllMessages((prev) => [...data, ...prev!]);
         else setHasMoreMessages(false);
-      }
+      },
+      enabled: allMessages.length === 0,
     }
   );
   const { data: tags } = trpc.message.allTags.useQuery();
@@ -174,7 +175,7 @@ interface DisplayMessagesProps {
   messages: MessageType[];
   onClickTag: (tag: Tag) => void;
   isLoading: boolean;
-  setMessages: Dispatch<SetStateAction<MessageType[] | undefined>>;
+  setMessages:  Dispatch<SetStateAction<MessageType[]>>;
 }
 const DisplayMessages = (props: DisplayMessagesProps) => {
   const { messages, onClickTag, isLoading, setMessages } = props;
