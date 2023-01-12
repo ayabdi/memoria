@@ -17,11 +17,12 @@ import { trpc } from "@/utils/trpc";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema) => void;
+  mode: "edit" | "create";
   tagToFilter?: Tag | null;
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
-  const { onSubmit, tagToFilter: selectedTag } = props;
+  const { onSubmit, tagToFilter: selectedTag, mode } = props;
   const [message, setMessage] = React.useState("");
   const [markdownMode, setMarkdownMode] = useState(false);
   const [mdValue, setMdValue] = useState("***hello world!***");
@@ -220,7 +221,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
             />
           </div>
         )}
-        {messageToEdit ? (
+        {mode === 'edit' ? (
           <div className="mr-1 flex">
             <button
               onClick={() => setMessageToEdit?.(null)}

@@ -179,7 +179,7 @@ export const Home = () => {
             ))}
         </div>
         <div className="flex-0 mt-4 px-6">
-          <MessageInputBox tagToFilter={tagToFilter} onSubmit={createMessage} />
+          <MessageInputBox mode="create" tagToFilter={tagToFilter} onSubmit={createMessage} />
         </div>
       </div>
     </>
@@ -225,6 +225,7 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
                   editMessage({ ...m, messageId: message.id });
                   setMessageToEdit(null);
                 }}
+                mode="edit"
               />
             </div>
           ) : (
