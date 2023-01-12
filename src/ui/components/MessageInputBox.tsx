@@ -12,19 +12,16 @@ import { Tag } from "@prisma/client";
 import { cleanMessage } from "@/utils/funtions";
 import { MarkdownEditor } from "./Markdown";
 import { useAtom } from "jotai";
-import { allTagsAtom, messageToEditAtom } from "../store";
+import { messageToEditAtom } from "../store";
+import { trpc } from "@/utils/trpc";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema) => void;
-  existingTags?: Tag[];
   tagToFilter?: Tag | null;
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
-  const {
-    onSubmit,
-    tagToFilter: selectedTag
-  } = props;
+  const { onSubmit, tagToFilter: selectedTag } = props;
   const [message, setMessage] = React.useState("");
   const [markdownMode, setMarkdownMode] = useState(false);
   const [mdValue, setMdValue] = useState("***hello world!***");
@@ -32,7 +29,10 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
-  const [allTags] = useAtom(allTagsAtom);
+
+  const { data: allTags } = trpc.message.allTags.useQuery(void 0, {
+    enabled: false,
+  });
 
   const contentEditable = React.useRef<HTMLDivElement>(null);
 
@@ -43,8 +43,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
       type: markdownMode ? "markdown" : "text",
       tags: tags.map((tag) => {
         const existingTag = allTags?.find(
-          (t) =>
-            t.tagName.toLowerCase() === tag.tagName.toLowerCase()
+          (t) => t.tagName.toLowerCase() === tag.tagName.toLowerCase()
         );
         return {
           tagName: tag.tagName,
@@ -113,7 +112,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
             <img className="inline h-6 cursor-pointer" src="/icons/tag.svg" />
           </Popover.Button>
 
-          <Popover.Panel className="absolute z-10">
+          <Popover.Panel className="relative z-10">
             <div className="absolute  -left-10 -top-[110px] z-10 my-2 min-h-[66px] w-80 origin-bottom-right rounded-md border-[0.5px] border-zinc-600 bg-[#36363B] text-zinc-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
               <form onSubmit={submitTag}>
                 <div className="flex h-6 flex-row p-4">

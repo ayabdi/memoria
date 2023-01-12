@@ -9,7 +9,7 @@ import { Tag } from "@prisma/client";
 import { MoonLoader } from "react-spinners";
 import { useAtom } from "jotai";
 import Avatar from "react-avatar";
-import { allTagsAtom, messageToEditAtom } from "./store";
+import { messageToEditAtom } from "./store";
 
 export const Home = () => {
   const user = useSession().data?.user;
@@ -38,10 +38,7 @@ export const Home = () => {
       }
     }
   );
-  const [allTags, setAllTags] = useAtom(allTagsAtom);
-  const { data: tags } = trpc.message.allTags.useQuery(void 0, {
-    onSuccess: (data) => setAllTags(data),
-  });
+  const { data: tags } = trpc.message.allTags.useQuery();
 
   // to display messages that are filtered by a tag
   const { data: filteredMessages, isLoading: isFilterLoading } =
@@ -164,7 +161,6 @@ export const Home = () => {
         </div>
         <div className="flex-0 mt-4 px-6">
           <MessageInputBox
-            existingTags={tags}
             tagToFilter={tagToFilter}
             onSubmit={createMessage}
           />
