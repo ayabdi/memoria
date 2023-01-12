@@ -49,7 +49,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
       }),
       content: markdownMode ? mdValue : cleanMessage(message),
       type: markdownMode ? "markdown" : "text",
-      from: user?.name ?? user?.email!,
+      from: user?.name ?? user?.email ?? "Anonymous",
       tags: tags.map((tag) => {
         const existingTag = allTags?.find(
           (t) => t.tagName.toLowerCase() === tag.tagName.toLowerCase()

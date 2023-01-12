@@ -1,5 +1,3 @@
-import { useSession } from "next-auth/react";
-
 import { trpc } from "../utils/trpc";
 import { MessageInputBox } from "@/ui/components/MessageInputBox";
 import { MessageRow } from "@/ui/components/MessageRow";
@@ -43,7 +41,7 @@ export const Home = () => {
       },
     }
   );
-  const { data: tags } = trpc.message.allTags.useQuery();
+  trpc.message.allTags.useQuery();
 
   // to display messages that are filtered by a tag
   const { data: filteredMessages, isLoading: isFilterLoading } =
@@ -79,15 +77,15 @@ export const Home = () => {
   const scrollToLastMessage = () => {
     if (!messages?.length) return;
     const lastMessage = document.getElementById(
-      messages[messages.length - 1]?.id!
+      messages[messages.length - 1]?.id || ""
     );
     if (lastMessage) lastMessage.scrollIntoView();
   };
 
   const scrollToBottom = () => {
     const scroll =
-      chatContainerRef.current?.scrollHeight! -
-      chatContainerRef.current?.clientHeight!;
+      (chatContainerRef.current?.scrollHeight || 0) -
+      (chatContainerRef.current?.clientHeight || 0);
     chatContainerRef.current?.scrollTo(0, scroll);
   };
 
@@ -213,7 +211,7 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
       const newMessages = [...prev];
       newMessages[index] = message!;
       return newMessages;
-      })
+    });
   };
   const handleDelete = (id: string) => {
     deleteMessage(id);

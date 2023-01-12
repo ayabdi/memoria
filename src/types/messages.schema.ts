@@ -1,5 +1,5 @@
 
-import { Message, Tag, TagsOnMessages } from "@prisma/client";
+import type { Message, Tag, TagsOnMessages } from "@prisma/client";
 import { z } from "zod";
 
 export interface ServerMessageType extends Message {

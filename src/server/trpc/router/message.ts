@@ -5,7 +5,8 @@ export const messageRouter = router({
   createMessage: publicProcedure
     .input(CreateMessageSchema)
     .mutation(({ ctx, input }) => {
-      const userId = ctx.session?.user?.id!;
+      const userId = ctx.session?.user?.id || null;
+      if(!userId) throw new Error('User not logged in');
 
       const tagsToAdd = input.tags?.map((tag) => {
         if (tag.id) return { tag: { connect: { id: tag.id } } };
@@ -61,6 +62,9 @@ export const messageRouter = router({
   messagesByTag: publicProcedure
     .input(GetMessagesSchema)
     .query(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id || null;
+      if(!userId) throw new Error('User not logged in');
+
       if (!input?.tagId) return [];
       const page = input.page || 1;
       const take = 40;
@@ -92,9 +96,12 @@ export const messageRouter = router({
     }),
 
   allTags: publicProcedure.query(({ ctx }) => {
+    const userId = ctx.session?.user?.id || null;
+    if(!userId) throw new Error('User not logged in');
+
     return ctx.prisma.tag.findMany({
       where: {
-        userId: ctx.session?.user?.id,
+        userId
       },
     });
   }),
@@ -114,10 +121,13 @@ export const messageRouter = router({
   }),
 
   editMessage: publicProcedure.input(EditMessageSchema).mutation(async ({ ctx, input }) => {
+    const userId = ctx.session?.user?.id || null;
+    if(!userId) throw new Error('User not logged in');
+
     const tagsToAdd = input.tags?.map((tag) => {
       if (tag.id) return { tag: { connect: { id: tag.id } } };
       return {
-        tag: { create: { tagName: tag.tagName, color: tag.color, userId: ctx.session?.user?.id! } },
+        tag: { create: { tagName: tag.tagName, color: tag.color, userId } },
       };
     });
     // reset tags

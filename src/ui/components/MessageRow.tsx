@@ -67,6 +67,7 @@ export const MessageRow = (props: MessageRowProps) => {
           <div className="flex">
             {message.tags?.map((tag) => (
               <div
+                key={tag.id}
                 className={`my-1 mr-1.5 -ml-1 w-max cursor-pointer rounded-2xl border px-2.5 py-[1px] text-[13px] text-white`}
                 style={{
                   backgroundColor: tag.color.replace("1)", "0.2)"),
