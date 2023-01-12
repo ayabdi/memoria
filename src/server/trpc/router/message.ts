@@ -29,6 +29,9 @@ export const messageRouter = router({
   allMessages: publicProcedure
     .input(GetMessagesSchema)
     .query(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id || null;
+      if(!userId) throw new Error('User not logged in');
+
       const page = input?.page || 1;
       const take = 40;
       const skip = (page - 1) * take;
@@ -74,7 +77,7 @@ export const messageRouter = router({
         take,
         skip,
         where: {
-          userId: ctx.session?.user?.id!,
+          userId,
           tags: {
             some: {
               tagId: input.tagId,
