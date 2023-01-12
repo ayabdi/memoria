@@ -1,26 +1,41 @@
 import { useSession } from "next-auth/react";
 import React, { Dispatch, SetStateAction } from "react";
 import Avatar from "react-avatar";
-import { Tag } from "@prisma/client";
 import { Popover } from "@headlessui/react";
 import { Markdown } from "./Markdown";
 import { trpc } from "@/utils/trpc";
+
+type Tag = {
+  tagName: string;
+  color: string;
+  tagId?: string;
+};
 
 interface MessageRowProps {
   content: string;
   from: string;
   createdAt: Date;
-  tags: Tag[];
   type: string;
-  setMessageToEdit?:()=>void;
-  deleteMessage?:()=>void;
+  tags?: Tag[];
+  setMessageToEdit?: () => void;
+  deleteMessage?: () => void;
   onClickTag?: (tag: Tag) => void;
   hideLabels?: boolean;
   className?: string;
 }
 
 export const MessageRow = (props: MessageRowProps) => {
-  const { content, type, from, createdAt, tags, className, onClickTag, setMessageToEdit, deleteMessage } = props;
+  const {
+    content,
+    type,
+    from,
+    createdAt,
+    tags,
+    className,
+    onClickTag,
+    setMessageToEdit,
+    deleteMessage,
+  } = props;
 
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     hour: "numeric",
@@ -30,7 +45,7 @@ export const MessageRow = (props: MessageRowProps) => {
   const isYou = sessionData?.user?.name === from;
 
   const [showOptions, setShowOptions] = React.useState(false);
-  
+
   return (
     <div
       className={`justify-between py-4 px-6 hover:bg-zinc-700/20 ${className}`}
@@ -63,7 +78,7 @@ export const MessageRow = (props: MessageRowProps) => {
             )}
           </div>
           <div className="flex">
-            {tags.map((tag) => (
+            {tags?.map((tag) => (
               <div
                 className={`my-1 mr-1.5 -ml-1 w-max cursor-pointer rounded-2xl border px-2.5 py-[1px] text-[13px] text-white`}
                 style={{

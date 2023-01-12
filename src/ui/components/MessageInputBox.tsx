@@ -7,21 +7,28 @@ import React, {
 } from "react";
 import ContentEditable from "react-contenteditable";
 import { Popover, Transition } from "@headlessui/react";
-import { CreateMessageSchema, EditMessageSchema, MessageType } from "@/types/messages.schema";
+import {
+  CreateMessageSchema,
+  EditMessageSchema,
+  MessageSchema,
+  TagSchema,
+} from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { cleanMessage } from "@/utils/funtions";
 import { MarkdownEditor } from "./Markdown";
 import { useAtom } from "jotai";
 import { messageToEditAtom } from "../store";
 import { trpc } from "@/utils/trpc";
+import { useSession } from "next-auth/react";
 
 interface MessageBoxProps {
-  onSubmit: (message: CreateMessageSchema | EditMessageSchema) => void;
+  onSubmit: (message: MessageSchema) => void;
   mode: "edit" | "create";
-  tagToFilter?: Tag | null;
+  tagToFilter?: TagSchema | null;
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
+  const user = useSession().data?.user;
   const { onSubmit, tagToFilter: selectedTag, mode } = props;
   const [message, setMessage] = React.useState("");
   const [markdownMode, setMarkdownMode] = useState(false);
@@ -40,9 +47,13 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSubmit({
-      ...mode === "edit" && { messageId: messageToEdit?.id },
+      ...(mode === "edit" && {
+        id: messageToEdit?.id,
+        createdAt: messageToEdit?.createdAt,
+      }),
       content: markdownMode ? mdValue : cleanMessage(message),
       type: markdownMode ? "markdown" : "text",
+      from: user?.name ?? user?.email!,
       tags: tags.map((tag) => {
         const existingTag = allTags?.find(
           (t) => t.tagName.toLowerCase() === tag.tagName.toLowerCase()
@@ -90,12 +101,8 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
   useEffect(() => {
     if (!messageToEdit) return;
-    setTags(
-      messageToEdit!.tags.map((tag) => ({
-        color: tag.tag.color,
-        tagName: tag.tag.tagName,
-      }))
-    );
+    setTags(messageToEdit!.tags as TagSchema[]);
+
     if (messageToEdit.type === "markdown") {
       setMdValue(messageToEdit.content);
       setMarkdownMode(true);
@@ -222,7 +229,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
             />
           </div>
         )}
-        {mode === 'edit' ? (
+        {mode === "edit" ? (
           <div className="mr-1 flex">
             <button
               onClick={() => setMessageToEdit?.(null)}

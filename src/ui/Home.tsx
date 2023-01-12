@@ -7,7 +7,9 @@ import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import {
   CreateMessageSchema,
   EditMessageSchema,
-  MessageType,
+  MessageSchema,
+  ServerMessageType,
+  TagSchema,
 } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
 import { MoonLoader } from "react-spinners";
@@ -18,7 +20,7 @@ import { allMessagesAtom, messageToEditAtom } from "./store";
 export const Home = () => {
   const user = useSession().data?.user;
   const [pageNo, setPageNo] = useState<number>(1);
-  const [tagToFilter, setTagToFilter] = useState<Tag | null>(null);
+  const [tagToFilter, setTagToFilter] = useState<TagSchema | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
   const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
   const [initialLoad, setInitialLoad] = useState<boolean>(false);
@@ -92,7 +94,7 @@ export const Home = () => {
     chatContainerRef.current?.scrollTo(0, scroll);
   };
 
-  const onTagFilter = (tag: Tag) => {
+  const onTagFilter = (tag: TagSchema) => {
     setTagToFilter(tag);
     setPageNo(1);
   };
@@ -197,8 +199,8 @@ export const Home = () => {
 };
 
 interface DisplayMessagesProps {
-  messages: MessageType[];
-  onClickTag: (tag: Tag) => void;
+  messages: MessageSchema[];
+  onClickTag: (tag: TagSchema) => void;
   isLoading: boolean;
 }
 const DisplayMessages = (props: DisplayMessagesProps) => {
@@ -206,19 +208,19 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
   const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
 
-  const { mutate: editMessage } = trpc.message.editMessage.useMutation({
-    onSuccess: (data) =>
-      // update message in messages array
-      setAllMessages((prev) => {
-        if (!prev) return prev;
-        const index = prev.findIndex((m) => m.id === data.id);
-        if (index === -1) return prev;
-        const newMessages = [...prev];
-        newMessages[index] = data;
-        return newMessages;
-      }),
-  });
+  const { mutate: editMessage } = trpc.message.editMessage.useMutation();
   const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
+  const handleEdit = (message: EditMessageSchema) => {
+    editMessage(message);
+    setAllMessages((prev) => {
+      if (!prev) return prev;
+      const index = prev.findIndex((m) => m.id === message!.id);
+      if (index === -1) return prev;
+      const newMessages = [...prev];
+      newMessages[index] = message!;
+      return newMessages;
+      })
+  };
   const handleDelete = (id: string) => {
     deleteMessage(id);
     setAllMessages((prev) => {
@@ -243,8 +245,8 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
                 className="mb-auto mt-1 mr-4 rounded-md"
               />
               <MessageInputBox
-                onSubmit={(m: EditMessageSchema | CreateMessageSchema) => {
-                  editMessage(m as EditMessageSchema);
+                onSubmit={(m: MessageSchema) => {
+                  handleEdit(m as EditMessageSchema);
                   setMessageToEdit(null);
                 }}
                 mode="edit"
@@ -253,13 +255,13 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
           ) : (
             <MessageRow
               content={message.content}
-              createdAt={message.createdAt}
+              createdAt={message.createdAt!}
               type={message.type}
               from={message.from}
-              tags={message.tags.map((tag) => tag.tag)}
+              tags={message.tags}
               key={message.id}
               setMessageToEdit={() => setMessageToEdit(message)}
-              deleteMessage={() => handleDelete(message.id)}
+              deleteMessage={() => handleDelete(message.id!)}
               onClickTag={onClickTag}
               className={idx === 0 ? "mt-auto" : ""}
             />

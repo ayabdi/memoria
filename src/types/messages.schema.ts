@@ -2,34 +2,53 @@
 import { Message, Tag, TagsOnMessages } from "@prisma/client";
 import { z } from "zod";
 
-export interface MessageType extends Message {
+export interface ServerMessageType extends Message {
     tags: (TagsOnMessages & {
         tag: Tag;
     })[];
 }
 
-export const CreateTagSchema = z.object({
-    color: z.string(),
+export const TagSchema = z.object({
     tagName: z.string(),
-    tagId: z.string().optional(),
-})
+    color: z.string(),
+    id: z.string().optional(),
+    createdAt: z.date().optional(),
+    updatedAt: z.date().optional(),
+    userId: z.string().optional()
+});
+
+export const MessageSchema = z.object({
+    id: z.string().optional(),
+    createdAt: z.date().optional(),
+    updatedAt: z.date().optional(),
+    content: z.string(),
+    from: z.string(),
+    type: z.string(),
+    userId: z.string().optional(),
+    tags: z.array(TagSchema).optional(),
+});
+
 export const CreateMessageSchema = z.object({
     content: z.string(),
     type: z.string(),
-    tags: z.array(CreateTagSchema).optional(),
+    from: z.string(),
+    tags: z.array(TagSchema).optional(),
 })
 export const EditMessageSchema = z.object({
     content: z.string(),
     type: z.string(),
-    tags: z.array(CreateTagSchema).optional(),
-    messageId: z.string(),
+    tags: z.array(TagSchema).optional(),
+    from: z.string(),
+    id: z.string(),
 })
+
 export const GetMessagesSchema = z.object({
     page: z.number().optional(),
     tagId: z.string().optional(),
 }).optional()
 
+export type TagSchema = z.infer<typeof TagSchema>;
+export type MessageSchema = z.infer<typeof MessageSchema>;
 export type EditMessageSchema = z.infer<typeof EditMessageSchema>;
 export type GetMessagesSchema = z.infer<typeof GetMessagesSchema>;
-export type CreateTagSchema = z.infer<typeof CreateTagSchema>;
 export type CreateMessageSchema = z.infer<typeof CreateMessageSchema>;

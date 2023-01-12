@@ -1,15 +1,15 @@
 import { router, publicProcedure } from "../trpc";
-import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema } from "@/types/messages.schema";
+import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, ServerMessageType } from "@/types/messages.schema";
+import { Tag } from "@prisma/client";
 import { z } from "zod";
 export const messageRouter = router({
   createMessage: publicProcedure
     .input(CreateMessageSchema)
     .mutation(({ ctx, input }) => {
-      const name = ctx.session?.user?.name!;
       const userId = ctx.session?.user?.id!;
 
       const tagsToAdd = input.tags?.map((tag) => {
-        if (tag.tagId) return { tag: { connect: { id: tag.tagId } } };
+        if (tag.id) return { tag: { connect: { id: tag.id } } };
         return {
           tag: { create: { tagName: tag.tagName, color: tag.color, userId } },
         };
@@ -20,7 +20,7 @@ export const messageRouter = router({
           content: input.content,
           type: input.type,
           userId,
-          from: name,
+          from: input.from,
           ...(tagsToAdd?.length && { tags: { create: tagsToAdd } }),
         },
       });
@@ -57,7 +57,7 @@ export const messageRouter = router({
           },
         },
       });
-      return result.reverse();
+      return formatResult(result).reverse();
     }),
   messagesByTag: publicProcedure
     .input(GetMessagesSchema)
@@ -89,7 +89,7 @@ export const messageRouter = router({
           },
         },
       });
-      return result.reverse();
+      return formatResult(result).reverse();
     }),
 
   allTags: publicProcedure.query(({ ctx }) => {
@@ -110,22 +110,21 @@ export const messageRouter = router({
 
   editMessage: publicProcedure.input(EditMessageSchema).mutation(async ({ ctx, input }) => {
     const tagsToAdd = input.tags?.map((tag) => {
-      if (tag.tagId) return { tag: { connect: { id: tag.tagId } } };
+      if (tag.id) return { tag: { connect: { id: tag.id } } };
       return {
         tag: { create: { tagName: tag.tagName, color: tag.color, userId: ctx.session?.user?.id! } },
       };
     });
     // reset tags
-
     await ctx.prisma.tagsOnMessages.deleteMany({
       where: {
-        messageId: input.messageId,
+        messageId: input.id,
       },
     });
 
-    return ctx.prisma.message.update({
+    const result = await ctx.prisma.message.update({
       where: {
-        id: input.messageId,
+        id: input.id,
       },
       data: {
         content: input.content,
@@ -140,5 +139,16 @@ export const messageRouter = router({
         },
       },
     });
+    return formatResult([result])[0];
   }),
 });
+
+
+const formatResult = (result: ServerMessageType[]) => {
+  return result.map((message) => {
+    return {
+      ...message,
+      tags: message.tags.map((tag) => tag.tag),
+    };
+  });
+}
