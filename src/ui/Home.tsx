@@ -16,7 +16,6 @@ import Avatar from "react-avatar";
 import { allMessagesAtom, messageToEditAtom } from "./store";
 
 export const Home = () => {
-  const user = useSession().data?.user;
   const [pageNo, setPageNo] = useState<number>(1);
   const [tagToFilter, setTagToFilter] = useState<TagSchema | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);

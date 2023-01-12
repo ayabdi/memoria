@@ -1,8 +1,7 @@
 import { useSession } from "next-auth/react";
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import Avatar from "react-avatar";
 import { Markdown } from "./Markdown";
-import { trpc } from "@/utils/trpc";
 import { MessageSchema, TagSchema } from "@/types/messages.schema";
 
 

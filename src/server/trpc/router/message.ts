@@ -1,6 +1,5 @@
 import { router, publicProcedure } from "../trpc";
 import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, ServerMessageType } from "@/types/messages.schema";
-import { Tag } from "@prisma/client";
 import { z } from "zod";
 export const messageRouter = router({
   createMessage: publicProcedure

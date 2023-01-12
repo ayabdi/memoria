@@ -1,16 +1,12 @@
 import React, {
-  Dispatch,
-  SetStateAction,
   useEffect,
-  useRef,
   useState,
 } from "react";
 import ContentEditable from "react-contenteditable";
-import { Popover, Transition } from "@headlessui/react";
+import { Popover } from "@headlessui/react";
 import {
   CreateMessageSchema,
   EditMessageSchema,
-  MessageSchema,
   TagSchema,
 } from "@/types/messages.schema";
 import { Tag } from "@prisma/client";
