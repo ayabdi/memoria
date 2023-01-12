@@ -40,7 +40,7 @@ export const messageRouter = router({
         take,
         skip,
         where: {
-          userId: ctx.session?.user?.id!,
+          userId,
           ...(input?.tagId && {
             tags: {
               some: {
