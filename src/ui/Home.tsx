@@ -32,11 +32,11 @@ export const Home = () => {
   } = trpc.message.allMessages.useQuery(
     { page: pageNo },
     {
-      onSuccess: (data) => {
-        if (data?.length) setAllMessages((prev) => [...data, ...prev!]);
-        else setHasMoreMessages(false);
-      },
       enabled: allMessages.length === 0,
+      onSuccess: (data) => {
+        if (data?.length) setAllMessages(data);
+        if (data?.length < 40) setHasMoreMessages(false);
+      },
     }
   );
   const { data: tags } = trpc.message.allTags.useQuery();
@@ -65,8 +65,10 @@ export const Home = () => {
       onSuccess: () =>
         refetch().then(({ data }) => {
           if (data?.length) setAllMessages(data);
+          removeUnsentMessage(message);
+          scrollToBottom();
         }),
-      onSettled: () => removeUnsentMessage(message),
+      onError: () => removeUnsentMessage(message),
     });
   };
 
@@ -117,7 +119,11 @@ export const Home = () => {
 
   // refetch when page number changes
   useEffect(() => {
-    if (pageNo > 1) refetch();
+    if (pageNo > 1)
+      refetch().then(({ data }) => {
+        if (data?.length) setAllMessages((prev) => [...data, ...prev!]);
+        else setHasMoreMessages(false);
+      });
   }, [pageNo]);
 
   return (
@@ -161,10 +167,7 @@ export const Home = () => {
             ))}
         </div>
         <div className="flex-0 mt-4 px-6">
-          <MessageInputBox
-            tagToFilter={tagToFilter}
-            onSubmit={createMessage}
-          />
+          <MessageInputBox tagToFilter={tagToFilter} onSubmit={createMessage} />
         </div>
       </div>
     </>
@@ -175,24 +178,24 @@ interface DisplayMessagesProps {
   messages: MessageType[];
   onClickTag: (tag: Tag) => void;
   isLoading: boolean;
-  setMessages:  Dispatch<SetStateAction<MessageType[]>>;
+  setMessages: Dispatch<SetStateAction<MessageType[]>>;
 }
 const DisplayMessages = (props: DisplayMessagesProps) => {
   const { messages, onClickTag, isLoading, setMessages } = props;
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
   const { mutate: editMessage } = trpc.message.editMessage.useMutation({
-    onSuccess: (data) =>
-      // update message in messages array
-      setMessages &&
-      setMessages((prev) => {
-        if (!prev) return prev;
-        const index = prev.findIndex((m) => m.id === data.id);
-        if (index === -1) return prev;
-        const newMessages = [...prev];
-        newMessages[index] = data;
-        return newMessages;
-      }),
-  });
+      onSuccess: (data) =>
+        // update message in messages array
+        setMessages &&
+        setMessages((prev) => {
+          if (!prev) return prev;
+          const index = prev.findIndex((m) => m.id === data.id);
+          if (index === -1) return prev;
+          const newMessages = [...prev];
+          newMessages[index] = data;
+          return newMessages;
+        }),
+    });
 
   return (
     <>
