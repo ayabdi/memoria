@@ -95,7 +95,19 @@ export const Home = () => {
   // scroll to the last fetched message every page load
   // this to prevent abrupt scrolling to the top when new messages are fetched
   useEffect(() => {
-    if (allMessages?.length) scrollToLastMessage();
+    if (!allMessages?.length) return;
+
+    // scroll to last message when user scrolls to top of page
+    if (pageNo > 1) scrollToLastMessage();
+
+    // hack to keep messages view scrolled to the bottom on initial load
+    // this is done because markdown messages take a while to render then screws up the scroll position
+    const interval = setInterval(() => {
+      scrollToBottom();
+    }, 10);
+    setTimeout(() => {
+      clearInterval(interval);
+    }, 2000);
   }, [allMessages]);
 
   // scroll to the bottom when new messages are added but not yet sent to the server
@@ -184,18 +196,18 @@ const DisplayMessages = (props: DisplayMessagesProps) => {
   const { messages, onClickTag, isLoading, setMessages } = props;
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
   const { mutate: editMessage } = trpc.message.editMessage.useMutation({
-      onSuccess: (data) =>
-        // update message in messages array
-        setMessages &&
-        setMessages((prev) => {
-          if (!prev) return prev;
-          const index = prev.findIndex((m) => m.id === data.id);
-          if (index === -1) return prev;
-          const newMessages = [...prev];
-          newMessages[index] = data;
-          return newMessages;
-        }),
-    });
+    onSuccess: (data) =>
+      // update message in messages array
+      setMessages &&
+      setMessages((prev) => {
+        if (!prev) return prev;
+        const index = prev.findIndex((m) => m.id === data.id);
+        if (index === -1) return prev;
+        const newMessages = [...prev];
+        newMessages[index] = data;
+        return newMessages;
+      }),
+  });
 
   return (
     <>
