@@ -1,5 +1,5 @@
 import { router, publicProcedure } from "../trpc";
-import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, ServerMessageType } from "@/types/messages.schema";
+import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, type ServerMessageType } from "@/types/messages.schema";
 import { z } from "zod";
 export const messageRouter = router({
   createMessage: publicProcedure
