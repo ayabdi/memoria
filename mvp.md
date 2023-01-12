@@ -1,11 +1,11 @@
 
 ## MVP Features
 
-- [ ] Send Text
-- [ ] Add tags
-- [ ] Filter by tags
+- [x] Send Text
+- [x] Add tags
+- [x] Filter by tags
 - [ ] Search
 - [ ] Send Files
-- [ ] Markdown Mode
+- [x] Markdown Mode
 - [ ] Slack bot
 - [ ] Whatsapp bot
