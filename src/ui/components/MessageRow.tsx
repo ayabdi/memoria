@@ -64,7 +64,7 @@ export const MessageRow = (props: MessageRowProps) => {
               </div>
             )}
           </div>
-          <div className="flex">
+          <div className="flex mb-1">
             {message.tags?.map((tag) => (
               <div
                 key={tag.id}
