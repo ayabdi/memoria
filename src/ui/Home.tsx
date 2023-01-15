@@ -46,7 +46,7 @@ export const Home = () => {
   // to display messages that are filtered by a tag
   const { data: filteredMessages, isLoading: isFilterLoading } =
     trpc.message.messagesByTag.useQuery(
-      { tagId: tagToFilter?.id },
+      { tagName: tagToFilter?.tagName },
       { enabled: !!tagToFilter, onSuccess: () => scrollToBottom() }
     );
 

@@ -33,7 +33,7 @@ export const EditMessageSchema = MessageSchema
 
 export const GetMessagesSchema = z.object({
     page: z.number().optional(),
-    tagId: z.string().optional(),
+    tagName: z.string().optional(),
 }).optional()
 
 export type TagSchema = z.infer<typeof TagSchema>;

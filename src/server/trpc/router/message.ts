@@ -40,14 +40,7 @@ export const messageRouter = router({
         take,
         skip,
         where: {
-          userId,
-          ...(input?.tagId && {
-            tags: {
-              some: {
-                tagId: input?.tagId,
-              },
-            },
-          }),
+          userId
         },
         orderBy: {
           createdAt: "desc",
@@ -68,7 +61,7 @@ export const messageRouter = router({
       const userId = ctx.session?.user?.id || null;
       if(!userId) throw new Error('User not logged in');
 
-      if (!input?.tagId) return [];
+      if (!input?.tagName) return [];
       const page = input.page || 1;
       const take = 40;
       const skip = (page - 1) * take;
@@ -80,7 +73,9 @@ export const messageRouter = router({
           userId,
           tags: {
             some: {
-              tagId: input.tagId,
+              tag: {
+                tagName: input?.tagName,
+              },
             },
           },
         },
