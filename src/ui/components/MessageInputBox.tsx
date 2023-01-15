@@ -57,7 +57,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         return {
           tagName: tag.tagName,
           color: tag.color,
-          tagId: existingTag?.id,
+          id: existingTag?.id,
         };
       }),
     });
