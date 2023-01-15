@@ -34,12 +34,12 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   const [tagInput, setTagInput] = useState("");
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
 
-  const { data: allTags } = trpc.message.allTags.useQuery(void 0, {
+  const { data: allTags, refetch: refetchTags } = trpc.message.allTags.useQuery(void 0, {
     enabled: false,
   });
 
   const contentEditable = React.useRef<HTMLDivElement>(null);
-
+  
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSubmit({
@@ -61,6 +61,8 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         };
       }),
     });
+    refetchTags();
+    // reset state
     markdownMode ? setMdValue("") : setMessage("");
     setTags([]);
   };
