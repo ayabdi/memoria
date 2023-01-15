@@ -13,23 +13,23 @@ import { Tag } from "@prisma/client";
 import { cleanMessage } from "@/utils/funtions";
 import { MarkdownEditor } from "./Markdown";
 import { useAtom } from "jotai";
-import { messageToEditAtom } from "../store";
+import { messageToEditAtom, tagsToFilterAtom } from "../store";
 import { trpc } from "@/utils/trpc";
 import { useSession } from "next-auth/react";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema | EditMessageSchema) => void;
   mode: "edit" | "create";
-  tagToFilter?: TagSchema | null;
 }
 
 export const MessageInputBox = (props: MessageBoxProps) => {
   const user = useSession().data?.user;
-  const { onSubmit, tagToFilter: selectedTag, mode } = props;
+  const { onSubmit, mode } = props;
   const [message, setMessage] = React.useState("");
   const [markdownMode, setMarkdownMode] = useState(false);
   const [mdValue, setMdValue] = useState("***hello world!***");
-
+  const [tagsToFilter] = useAtom(tagsToFilterAtom)
+  
   const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
@@ -87,15 +87,17 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   // include filter tag in tags if not already included
   useEffect(() => {
     setTags([]);
-    if (!selectedTag) return;
-
-    if (!tags.find((t) => t.tagName === selectedTag?.tagName)) {
-      setTags([
-        ...tags,
-        { color: selectedTag!.color, tagName: selectedTag!.tagName },
-      ]);
-    }
-  }, [selectedTag]);
+    if (!tagsToFilter?.length) return;
+    setTags((prev) => {
+      const newTags = [...prev];
+      tagsToFilter.forEach((tag) => {
+        if (!newTags.find((t) => t.tagName === tag.tagName)) {
+          newTags.push(tag);
+        }
+      });
+      return newTags;
+    });
+  }, [tagsToFilter]);
 
   useEffect(() => {
     if (!messageToEdit) return;

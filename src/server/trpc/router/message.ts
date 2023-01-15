@@ -6,7 +6,7 @@ export const messageRouter = router({
     .input(CreateMessageSchema)
     .mutation(({ ctx, input }) => {
       const userId = ctx.session?.user?.id || null;
-      if(!userId) throw new Error('User not logged in');
+      if (!userId) throw new Error('User not logged in');
 
       const tagsToAdd = input.tags?.map((tag) => {
         if (tag.id) return { tag: { connect: { id: tag.id } } };
@@ -30,7 +30,7 @@ export const messageRouter = router({
     .input(GetMessagesSchema)
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id || null;
-      if(!userId) throw new Error('User not logged in');
+      if (!userId) throw new Error('User not logged in');
 
       const page = input?.page || 1;
       const take = 40;
@@ -40,41 +40,15 @@ export const messageRouter = router({
         take,
         skip,
         where: {
-          userId
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        include: {
-          tags: {
-            include: {
-              tag: true,
-            },
-          },
-        },
-      });
-      return formatResult(result).reverse();
-    }),
-  messagesByTag: publicProcedure
-    .input(GetMessagesSchema)
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.session?.user?.id || null;
-      if(!userId) throw new Error('User not logged in');
-
-      if (!input?.tagName) return [];
-      const page = input.page || 1;
-      const take = 40;
-      const skip = (page - 1) * take;
-
-      const result = await ctx.prisma.message.findMany({
-        take,
-        skip,
-        where: {
           userId,
-          tags: {
-            some: {
-              tag: {
-                tagName: input?.tagName,
+          ...input?.tagNames?.length && {
+            tags: {
+              some: {
+                tag: {
+                  tagName: {
+                    in: input?.tagNames,
+                  },
+                },
               },
             },
           },
@@ -95,7 +69,7 @@ export const messageRouter = router({
 
   allTags: publicProcedure.query(({ ctx }) => {
     const userId = ctx.session?.user?.id || null;
-    if(!userId) throw new Error('User not logged in');
+    if (!userId) throw new Error('User not logged in');
 
     return ctx.prisma.tag.findMany({
       where: {
@@ -120,7 +94,7 @@ export const messageRouter = router({
 
   editMessage: publicProcedure.input(EditMessageSchema).mutation(async ({ ctx, input }) => {
     const userId = ctx.session?.user?.id || null;
-    if(!userId) throw new Error('User not logged in');
+    if (!userId) throw new Error('User not logged in');
 
     const tagsToAdd = input.tags?.map((tag) => {
       if (tag.id) return { tag: { connect: { id: tag.id } } };

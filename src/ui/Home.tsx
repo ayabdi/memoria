@@ -11,13 +11,14 @@ import {
 import { MoonLoader } from "react-spinners";
 import { useAtom } from "jotai";
 import Avatar from "react-avatar";
-import { allMessagesAtom, messageToEditAtom } from "./store";
+import { messageToEditAtom, tagsToFilterAtom } from "./store";
 
 export const Home = () => {
   const [pageNo, setPageNo] = useState<number>(1);
-  const [tagToFilter, setTagToFilter] = useState<TagSchema | null>(null);
+  const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom)
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
-  const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
+  const [allMessages, setAllMessages] = useState<MessageSchema[]>([]);
+  const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
   const [initialLoad, setInitialLoad] = useState<boolean>(false);
 
   // to display messages that are not yet sent to the server (optimistic UI)
@@ -30,9 +31,9 @@ export const Home = () => {
     data: messages,
     refetch,
     isFetched,
-    isLoading,
+    isFetching
   } = trpc.message.allMessages.useQuery(
-    { page: pageNo },
+    { page: pageNo, tagNames: tagsToFilter?.map((tag) => tag.tagName) },
     {
       enabled: allMessages.length === 0,
       onSuccess: (data) => {
@@ -43,22 +44,9 @@ export const Home = () => {
   );
   trpc.message.allTags.useQuery();
 
-  // to display messages that are filtered by a tag
-  const { data: filteredMessages, isLoading: isFilterLoading } =
-    trpc.message.messagesByTag.useQuery(
-      { tagName: tagToFilter?.tagName },
-      { enabled: !!tagToFilter, onSuccess: () => scrollToBottom() }
-    );
-
   const { mutate } = trpc.message.createMessage.useMutation();
-
-  const removeUnsentMessage = (message: CreateMessageSchema) => {
-    setUnsentMessages((prev) => {
-      const idx = prev.indexOf(message);
-      if (idx === -1) return prev;
-      return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
-    });
-  };
+  const { mutate: editMessage } = trpc.message.editMessage.useMutation();
+  const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
 
   const createMessage = async (message: CreateMessageSchema) => {
     setUnsentMessages((prev) => [...prev, message]);
@@ -71,6 +59,37 @@ export const Home = () => {
           scrollToBottom();
         }),
       onError: () => removeUnsentMessage(message),
+    });
+  };
+
+  const handleEdit = (message: EditMessageSchema) => {
+    editMessage(message);
+    setAllMessages((prev) => {
+      if (!prev) return prev;
+      const index = prev.findIndex((m) => m.id === message!.id);
+      if (index === -1) return prev;
+      const newMessages = [...prev];
+      newMessages[index] = message!;
+      return newMessages;
+    });
+  };
+  const handleDelete = (id: string) => {
+    deleteMessage(id);
+    setAllMessages((prev) => {
+      if (!prev) return prev;
+      const index = prev.findIndex((m) => m.id === id);
+      if (index === -1) return prev;
+      const newMessages = [...prev];
+      newMessages.splice(index, 1);
+      return newMessages;
+    });
+  };
+
+  const removeUnsentMessage = (message: CreateMessageSchema) => {
+    setUnsentMessages((prev) => {
+      const idx = prev.indexOf(message);
+      if (idx === -1) return prev;
+      return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
     });
   };
 
@@ -90,9 +109,23 @@ export const Home = () => {
   };
 
   const onTagFilter = (tag: TagSchema) => {
-    setTagToFilter(tag);
+    // add tag to filter if not already present
+    setTagsToFilter((prev) => {
+      if (!prev) return [tag];
+      const idx = prev.indexOf(tag);
+      if (idx === -1) return [...prev, tag];
+      return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+    });
     setPageNo(1);
   };
+
+  useEffect(() => {
+    if (!tagsToFilter === null) refetch();
+    else
+      refetch().then(({ data }) => {
+        if (data?.length) setAllMessages(data);
+      });
+  }, [tagsToFilter]);
 
   // scroll to the last fetched message every page load
   // this to prevent abrupt scrolling to the top when new messages are fetched
@@ -145,26 +178,63 @@ export const Home = () => {
   return (
     <>
       <div className="mt-auto flex h-[calc(100vh_-_50px)] w-1/2 min-w-[600px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
-        {tagToFilter && (
+        {tagsToFilter?.length ? (
           <div className="flex w-full border-b-[0.5px] border-slate-700 px-6 py-4 text-lg text-white">
             <img
               src="/icons/left-arrow.svg"
               className="my-auto h-5 cursor-pointer pr-3 "
               onClick={() => {
-                setTagToFilter(null);
+                setTagsToFilter(null);
               }}
             />
-            <p> {tagToFilter?.tagName}</p>
+            <p> {tagsToFilter.map((tag) => tag.tagName).join(", ")}</p>
           </div>
-        )}
+        ): <></>}
         <div
           ref={chatContainerRef}
           className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
         >
-          <DisplayMessages
-            messages={tagToFilter ? filteredMessages! : allMessages!}
-            onClickTag={onTagFilter}
-            isLoading={tagToFilter ? isFilterLoading : isLoading}
+          {!isFetching &&
+            allMessages?.map((message, idx) => (
+              <div
+                id={message.id}
+                key={idx}
+                className={idx === 0 ? "mt-auto " : ""}
+              >
+                {messageToEdit && messageToEdit.id === message.id ? (
+                  <div className="flex px-6">
+                    <Avatar
+                      name={message.from}
+                      size="50"
+                      className="mb-auto mt-1 mr-4 rounded-md"
+                    />
+                    <MessageInputBox
+                      onSubmit={(
+                        m: CreateMessageSchema | EditMessageSchema
+                      ) => {
+                        handleEdit(m as EditMessageSchema);
+                        setMessageToEdit(null);
+                      }}
+                      mode="edit"
+                    />
+                  </div>
+                ) : (
+                  <MessageRow
+                    message={message}
+                    key={message.id + idx.toString()}
+                    setMessageToEdit={() => setMessageToEdit(message)}
+                    deleteMessage={() => handleDelete(message.id!)}
+                    onClickTag={onTagFilter}
+                    className={idx === 0 ? "mt-auto" : ""}
+                  />
+                )}
+              </div>
+            ))}
+          <MoonLoader
+            color="#fff"
+            size={70}
+            className="m-auto"
+            loading={isFetching}
           />
 
           {unsentMessages &&
@@ -181,87 +251,10 @@ export const Home = () => {
         <div className="flex-0 mt-4 px-6">
           <MessageInputBox
             mode="create"
-            tagToFilter={tagToFilter}
             onSubmit={createMessage}
           />
         </div>
       </div>
-    </>
-  );
-};
-
-interface DisplayMessagesProps {
-  messages: MessageSchema[];
-  onClickTag: (tag: TagSchema) => void;
-  isLoading: boolean;
-}
-const DisplayMessages = (props: DisplayMessagesProps) => {
-  const { messages, onClickTag, isLoading } = props;
-  const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
-  const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
-
-  const { mutate: editMessage } = trpc.message.editMessage.useMutation();
-  const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
-  const handleEdit = (message: EditMessageSchema) => {
-    editMessage(message);
-    setAllMessages((prev) => {
-      if (!prev) return prev;
-      const index = prev.findIndex((m) => m.id === message!.id);
-      if (index === -1) return prev;
-      const newMessages = [...prev];
-      newMessages[index] = message!;
-      return newMessages;
-    });
-  };
-  const handleDelete = (id: string) => {
-    deleteMessage(id);
-    setAllMessages((prev) => {
-      if (!prev) return prev;
-      const index = prev.findIndex((m) => m.id === id);
-      if (index === -1) return prev;
-      const newMessages = [...prev];
-      newMessages.splice(index, 1);
-      return newMessages;
-    });
-  };
-
-  return (
-    <>
-      {messages?.map((message, idx) => (
-        <div id={message.id} key={idx} className={idx === 0 ? "mt-auto " : ""}>
-          {messageToEdit && messageToEdit.id === message.id ? (
-            <div className="flex px-6">
-              <Avatar
-                name={message.from}
-                size="50"
-                className="mb-auto mt-1 mr-4 rounded-md"
-              />
-              <MessageInputBox
-                onSubmit={(m: CreateMessageSchema | EditMessageSchema) => {
-                  handleEdit(m as EditMessageSchema);
-                  setMessageToEdit(null);
-                }}
-                mode="edit"
-              />
-            </div>
-          ) : (
-            <MessageRow
-              message={message}
-              key={message.id + idx.toString()}
-              setMessageToEdit={() => setMessageToEdit(message)}
-              deleteMessage={() => handleDelete(message.id!)}
-              onClickTag={onClickTag}
-              className={idx === 0 ? "mt-auto" : ""}
-            />
-          )}
-        </div>
-      ))}
-      <MoonLoader
-        color="#fff"
-        size={70}
-        className="m-auto"
-        loading={isLoading && !messages?.length}
-      />
     </>
   );
 };
