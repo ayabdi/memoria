@@ -11,13 +11,14 @@ import {
 import { MoonLoader } from "react-spinners";
 import { useAtom } from "jotai";
 import Avatar from "react-avatar";
-import { messageToEditAtom, tagsToFilterAtom } from "./store";
+import { allMessagesAtom, messageToEditAtom, tagsToFilterAtom } from "./store";
+import { SearchBar } from "./components/SearchBar";
 
 export const Home = () => {
   const [pageNo, setPageNo] = useState<number>(1);
   const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom)
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
-  const [allMessages, setAllMessages] = useState<MessageSchema[]>([]);
+  const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
   const [initialLoad, setInitialLoad] = useState<boolean>(false);
 
@@ -35,7 +36,7 @@ export const Home = () => {
   } = trpc.message.allMessages.useQuery(
     { page: pageNo, tagNames: tagsToFilter?.map((tag) => tag.tagName) },
     {
-      enabled: allMessages.length === 0,
+      enabled: allMessages === null,
       onSuccess: (data) => {
         if (data?.length) setAllMessages(data);
         if (data?.length < 40) setHasMoreMessages(false);
@@ -177,7 +178,7 @@ export const Home = () => {
 
   return (
     <>
-      <div className="mt-auto flex h-[calc(100vh_-_50px)] w-1/2 min-w-[600px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
+      <div className="mt-auto flex h-[calc(100vh_-_55px)] w-1/2 min-w-[600px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
         {tagsToFilter?.length ? (
           <div className="flex w-full border-b-[0.5px] border-slate-700 px-6 py-4 text-lg text-white">
             <img

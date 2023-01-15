@@ -3,6 +3,7 @@ import Head from "next/head";
 import { useSession } from "next-auth/react";
 import { Home } from "@/ui/Home";
 import { Login } from "@/ui/Login";
+import { SearchBar } from "@/ui/components/SearchBar";
 
 const App: NextPage = () => {
   const { data: session } = useSession();
@@ -14,12 +15,10 @@ const App: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen flex-col items-center justify-center bg-zinc-800">
-      <div className="h-[50px] py-4 fixed top-0 w-full border-b-[0.5px] border-slate-700"></div>
-        {session?.user ? (
-          <Home/>
-        ) : (
-          <Login />
-        )}
+        <div className="fixed top-0 h-[55px] w-full border-b-[0.5px] border-slate-700 py-4">
+          <SearchBar />
+        </div>
+        {session?.user ? <Home /> : <Login />}
       </main>
     </>
   );

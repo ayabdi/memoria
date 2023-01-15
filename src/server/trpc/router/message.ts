@@ -41,6 +41,10 @@ export const messageRouter = router({
         skip,
         where: {
           userId,
+          content: {
+            contains: input?.searchTerm || '',
+            mode: 'insensitive',
+          },
           ...input?.tagNames?.length && {
             tags: {
               some: {
