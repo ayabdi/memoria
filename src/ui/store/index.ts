@@ -5,4 +5,3 @@ import { atom } from 'jotai'
 export const messageToEditAtom = atom<MessageSchema | null>(null);
 export const allMessagesAtom = atom<MessageSchema[]>([]);
 export const tagsToFilterAtom = atom<TagSchema[] | null>(null);
-export const searchTermAtom = atom<string>("");

@@ -12,14 +12,14 @@ import { MoonLoader } from "react-spinners";
 import { useAtom } from "jotai";
 import Avatar from "react-avatar";
 import { allMessagesAtom, messageToEditAtom, tagsToFilterAtom } from "./store";
-import { SearchBar } from "./components/SearchBar";
 
-export const Home = () => {
-  const [pageNo, setPageNo] = useState<number>(1);
+export const Feed = () => {
   const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom)
-  const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
   const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
+
+  const [pageNo, setPageNo] = useState<number>(1);
+  const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
   const [initialLoad, setInitialLoad] = useState<boolean>(false);
 
   // to display messages that are not yet sent to the server (optimistic UI)
@@ -34,7 +34,7 @@ export const Home = () => {
     isFetched,
     isFetching
   } = trpc.message.allMessages.useQuery(
-    { page: pageNo, tagNames: tagsToFilter?.map((tag) => tag.tagName) },
+    { page: pageNo, searchTerm: `tag:${tagsToFilter?.map((tag) => tag.tagName).join(",")}` },
     {
       enabled: allMessages === null,
       onSuccess: (data) => {

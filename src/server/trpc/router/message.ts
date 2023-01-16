@@ -1,5 +1,6 @@
 import { router, publicProcedure } from "../trpc";
 import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, type ServerMessageType } from "@/types/messages.schema";
+import { extractSearchTermFromSearchString, extractTagsFromSearchTerm } from "@/utils/funtions";
 import { z } from "zod";
 export const messageRouter = router({
   createMessage: publicProcedure
@@ -36,21 +37,24 @@ export const messageRouter = router({
       const take = 40;
       const skip = (page - 1) * take;
 
+      const tagNames = extractTagsFromSearchTerm(input?.searchTerm ?? "") || [];
+      const searchTerm = extractSearchTermFromSearchString(input?.searchTerm ?? "") || "";
+
       const result = await ctx.prisma.message.findMany({
         take,
         skip,
         where: {
           userId,
           content: {
-            contains: input?.searchTerm || '',
+            contains: searchTerm,
             mode: 'insensitive',
           },
-          ...input?.tagNames?.length && {
+          ...tagNames?.length && {
             tags: {
               some: {
                 tag: {
                   tagName: {
-                    in: input?.tagNames,
+                    in: tagNames
                   },
                 },
               },
