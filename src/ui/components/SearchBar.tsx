@@ -20,10 +20,7 @@ export const SearchBar = () => {
     EditorState.createWithContent(emptyContentState)
   );
 
-  const {
-    refetch,
-    isFetching,
-  } = trpc.message.allMessages.useQuery(
+  const { refetch, isFetching } = trpc.message.allMessages.useQuery(
     {
       searchTerm: editorState.getCurrentContent().getPlainText(),
     },
@@ -38,7 +35,7 @@ export const SearchBar = () => {
 
   const findSearchParams = (contentBlock: ContentBlock) => {
     const text = contentBlock.getText();
-    
+
     const TAG_REGEX = /tag:\w+(,\w+)*/;
     const BEFORE_REGEX = /before:\d{4}-\d{2}-\d{2}/;
     const AFTER_REGEX = /after:\d{4}-\d{2}-\d{2}/;
@@ -101,6 +98,43 @@ export const SearchBar = () => {
     return () => clearTimeout(timeout);
   }, [editorState]);
 
+  const emptyState = () =>
+    setEditorState(
+      EditorState.moveFocusToEnd(
+        EditorState.push(editorState, emptyContentState, "insert-characters")
+      )
+    );
+
+  useEffect(() => {
+    // empty search bar
+    if (tagsToFilter === null) emptyState();
+    if (tagsToFilter)
+      setEditorState(
+        // insert tagsToFilter to search bar in format "tag:tag1,tag2,tag3"
+        EditorState.moveFocusToEnd(
+          EditorState.push(
+            editorState,
+            convertFromRaw({
+              entityMap: {},
+              blocks: [
+                {
+                  key: "637gr",
+                  text: `tag:${tagsToFilter
+                    .map((tag) => tag.tagName)
+                    .join(",")} `,
+                  type: "unstyled",
+                  depth: 0,
+                  inlineStyleRanges: [],
+                  entityRanges: [],
+                },
+              ],
+            }),
+            "insert-characters"
+          )
+        )
+      );
+  }, [tagsToFilter]);
+
   return (
     <div className="mx-auto -mt-0.5 flex w-1/2 min-w-[600px] max-w-[700px] rounded border-[0.1px] border-zinc-600 bg-[#36363B] px-2.5 py-0.5 text-white shadow">
       <div className="flex-1">
@@ -112,8 +146,18 @@ export const SearchBar = () => {
         className="mt-0.5"
         loading={isFetching}
       />
+      {editorState.getCurrentContent().getPlainText() && (
+        <img
+          className="mt-0.5 ml-2 h-5 cursor-pointer text-white"
+          src="/icons/x.svg"
+          onClick={() => {
+            emptyState();
+            setTagsToFilter(null);
+          }}
+        />
+      )}
       <img
-        className="my-auto ml-2 h-5 cursor-pointer"
+        className="my-auto ml-1.5 h-5 cursor-pointer"
         src="/icons/filter.svg"
       />
       <img

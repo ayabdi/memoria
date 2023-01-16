@@ -14,7 +14,7 @@ import Avatar from "react-avatar";
 import { allMessagesAtom, messageToEditAtom, tagsToFilterAtom } from "./store";
 
 export const Feed = () => {
-  const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom)
+  const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom);
   const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
 
@@ -32,9 +32,15 @@ export const Feed = () => {
     data: messages,
     refetch,
     isFetched,
-    isFetching
+    isFetching,
+    isLoading,
   } = trpc.message.allMessages.useQuery(
-    { page: pageNo, searchTerm: `tag:${tagsToFilter?.map((tag) => tag.tagName).join(",")}` },
+    {
+      page: pageNo,
+      ...(tagsToFilter?.length && {
+        searchTerm: `tag:${tagsToFilter?.map((tag) => tag.tagName).join(",")}`,
+      }),
+    },
     {
       enabled: allMessages === null,
       onSuccess: (data) => {
@@ -120,14 +126,6 @@ export const Feed = () => {
     setPageNo(1);
   };
 
-  useEffect(() => {
-    if (!tagsToFilter === null) refetch();
-    else
-      refetch().then(({ data }) => {
-        if (data?.length) setAllMessages(data);
-      });
-  }, [tagsToFilter]);
-
   // scroll to the last fetched message every page load
   // this to prevent abrupt scrolling to the top when new messages are fetched
   useEffect(() => {
@@ -176,21 +174,31 @@ export const Feed = () => {
       });
   }, [pageNo]);
 
+  useEffect(() => {
+    if (!tagsToFilter === null) refetch();
+    else
+      refetch().then(({ data }) => {
+        if (data?.length) setAllMessages(data);
+      });
+  }, [tagsToFilter]);
+
   return (
     <>
       <div className="mt-auto flex h-[calc(100vh_-_55px)] w-1/2 min-w-[600px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
         {tagsToFilter?.length ? (
-          <div className="flex w-full border-b-[0.5px] border-slate-700 px-6 py-4 text-lg text-white">
+          <div className="flex w-full px-4 py-4 text-lg text-white">
             <img
               src="/icons/left-arrow.svg"
-              className="my-auto h-5 cursor-pointer pr-3 "
+              className="my-auto h-[18px] cursor-pointer pr-3 "
               onClick={() => {
                 setTagsToFilter(null);
               }}
             />
-            <p> {tagsToFilter.map((tag) => tag.tagName).join(", ")}</p>
+            {/* <p> {tagsToFilter.map((tag) => tag.tagName).join(", ")}</p> */}
           </div>
-        ): <></>}
+        ) : (
+          <></>
+        )}
         <div
           ref={chatContainerRef}
           className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
@@ -235,7 +243,7 @@ export const Feed = () => {
             color="#fff"
             size={70}
             className="m-auto"
-            loading={isFetching}
+            loading={isFetching || isLoading}
           />
 
           {unsentMessages &&
@@ -250,10 +258,7 @@ export const Feed = () => {
             ))}
         </div>
         <div className="flex-0 mt-4 px-6">
-          <MessageInputBox
-            mode="create"
-            onSubmit={createMessage}
-          />
+          <MessageInputBox mode="create" onSubmit={createMessage} />
         </div>
       </div>
     </>
