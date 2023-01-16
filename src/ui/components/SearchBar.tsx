@@ -38,8 +38,8 @@ export const SearchBar = () => {
 
   const findSearchParams = (contentBlock: ContentBlock) => {
     const text = contentBlock.getText();
-
-    const TAG_REGEX = /tag:\w+/;
+    
+    const TAG_REGEX = /tag:\w+(,\w+)*/;
     const BEFORE_REGEX = /before:\d{4}-\d{2}-\d{2}/;
     const AFTER_REGEX = /after:\d{4}-\d{2}-\d{2}/;
     const DURING_REGEX = /during:\d{4}-\d{2}-\d{2}/;
