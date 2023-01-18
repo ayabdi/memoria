@@ -5,22 +5,25 @@ import { useEffect, useRef, useState } from "react";
 import {
   CreateMessageSchema,
   EditMessageSchema,
-  MessageSchema,
   TagSchema,
 } from "@/types/messages.schema";
 import { MoonLoader } from "react-spinners";
 import { useAtom } from "jotai";
 import Avatar from "react-avatar";
-import { allMessagesAtom, messageToEditAtom, tagsToFilterAtom } from "./store";
+import {
+  allMessagesAtom,
+  messageToEditAtom,
+  searchTermAtom,
+  tagsToFilterAtom,
+} from "./store";
 
 export const Feed = () => {
   const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom);
   const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
-
+  const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
   const [pageNo, setPageNo] = useState<number>(1);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
-  const [initialLoad, setInitialLoad] = useState<boolean>(false);
 
   // to display messages that are not yet sent to the server (optimistic UI)
   const [unsentMessages, setUnsentMessages] = useState<CreateMessageSchema[]>(
@@ -33,16 +36,13 @@ export const Feed = () => {
     refetch,
     isFetched,
     isFetching,
-    isLoading,
   } = trpc.message.allMessages.useQuery(
     {
       page: pageNo,
-      ...(tagsToFilter?.length && {
-        searchTerm: `tag:${tagsToFilter?.map((tag) => tag.tagName).join(",")}`,
-      }),
+      searchTerm: searchTerm || undefined,
     },
     {
-      enabled: allMessages === null,
+      enabled: allMessages === null || searchTerm !== null,
       onSuccess: (data) => {
         if (data?.length) setAllMessages(data);
         if (data?.length < 40) setHasMoreMessages(false);
@@ -124,7 +124,12 @@ export const Feed = () => {
       return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
     });
     setPageNo(1);
+  };
+
+  const resetState = () => {
+    setTagsToFilter([]);
     setAllMessages([]);
+    setSearchTerm("");
   };
 
   // scroll to the last fetched message every page load
@@ -133,13 +138,14 @@ export const Feed = () => {
     if (!allMessages?.length || !isFetched) return;
 
     // scroll to last message when user scrolls to top of page
-    if (pageNo > 1) scrollToLastMessage();
+    if (pageNo > 1) {
+      scrollToLastMessage();
+      return;
+    }
 
-    // hack to keep messages view scrolled to the bottom on initial load
+    // hack to keep messages view scrolled to the bottom on load
     // this is done because markdown messages take a while to render then screws up the scroll position
-    if (initialLoad) return;
     const interval = setInterval(() => {
-      setInitialLoad(true);
       scrollToBottom();
     }, 10);
     setTimeout(() => {
@@ -171,30 +177,28 @@ export const Feed = () => {
     if (pageNo > 1)
       refetch().then(({ data }) => {
         if (data?.length) setAllMessages((prev) => [...data, ...prev!]);
-        else setHasMoreMessages(false);
+        else {
+          setHasMoreMessages(false);
+        }
       });
   }, [pageNo]);
 
   useEffect(() => {
-    if (!tagsToFilter === null) refetch();
-    else
-      refetch().then(({ data }) => {
-        if (data?.length) setAllMessages(data);
-      });
+    if (!tagsToFilter?.length) return;
+
+    setSearchTerm(`tag:${tagsToFilter?.map((tag) => tag.tagName).join(",")}`);
+    setAllMessages([]);
   }, [tagsToFilter]);
 
   return (
     <>
       <div className="mt-auto flex h-[calc(100vh_-_55px)] w-1/2 min-w-[600px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
-        {tagsToFilter?.length ? (
+        {tagsToFilter?.length || !!searchTerm ? (
           <div className="flex w-full px-4 py-4 text-lg text-white">
             <img
               src="/icons/left-arrow.svg"
               className="my-auto h-[18px] cursor-pointer pr-3 "
-              onClick={() => {
-                setTagsToFilter(null);
-                setAllMessages([])
-              }}
+              onClick={() => resetState()}
             />
             {/* <p> {tagsToFilter.map((tag) => tag.tagName).join(", ")}</p> */}
           </div>
@@ -244,7 +248,6 @@ export const Feed = () => {
             className="m-auto"
             loading={isFetching && allMessages?.length === 0}
           />
-
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
               <MessageRow
