@@ -124,6 +124,7 @@ export const Feed = () => {
       return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
     });
     setPageNo(1);
+    setAllMessages([]);
   };
 
   // scroll to the last fetched message every page load
@@ -192,6 +193,7 @@ export const Feed = () => {
               className="my-auto h-[18px] cursor-pointer pr-3 "
               onClick={() => {
                 setTagsToFilter(null);
+                setAllMessages([])
               }}
             />
             {/* <p> {tagsToFilter.map((tag) => tag.tagName).join(", ")}</p> */}
@@ -203,47 +205,44 @@ export const Feed = () => {
           ref={chatContainerRef}
           className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
         >
-          {!isFetching &&
-            allMessages?.map((message, idx) => (
-              <div
-                id={message.id}
-                key={idx}
-                className={idx === 0 ? "mt-auto " : ""}
-              >
-                {messageToEdit && messageToEdit.id === message.id ? (
-                  <div className="flex px-6">
-                    <Avatar
-                      name={message.from}
-                      size="50"
-                      className="mb-auto mt-1 mr-4 rounded-md"
-                    />
-                    <MessageInputBox
-                      onSubmit={(
-                        m: CreateMessageSchema | EditMessageSchema
-                      ) => {
-                        handleEdit(m as EditMessageSchema);
-                        setMessageToEdit(null);
-                      }}
-                      mode="edit"
-                    />
-                  </div>
-                ) : (
-                  <MessageRow
-                    message={message}
-                    key={message.id + idx.toString()}
-                    setMessageToEdit={() => setMessageToEdit(message)}
-                    deleteMessage={() => handleDelete(message.id!)}
-                    onClickTag={onTagFilter}
-                    className={idx === 0 ? "mt-auto" : ""}
+          {allMessages?.map((message, idx) => (
+            <div
+              id={message.id}
+              key={idx}
+              className={idx === 0 ? "mt-auto " : ""}
+            >
+              {messageToEdit && messageToEdit.id === message.id ? (
+                <div className="flex px-6">
+                  <Avatar
+                    name={message.from}
+                    size="50"
+                    className="mb-auto mt-1 mr-4 rounded-md"
                   />
-                )}
-              </div>
-            ))}
+                  <MessageInputBox
+                    onSubmit={(m: CreateMessageSchema | EditMessageSchema) => {
+                      handleEdit(m as EditMessageSchema);
+                      setMessageToEdit(null);
+                    }}
+                    mode="edit"
+                  />
+                </div>
+              ) : (
+                <MessageRow
+                  message={message}
+                  key={message.id + idx.toString()}
+                  setMessageToEdit={() => setMessageToEdit(message)}
+                  deleteMessage={() => handleDelete(message.id!)}
+                  onClickTag={onTagFilter}
+                  className={idx === 0 ? "mt-auto" : ""}
+                />
+              )}
+            </div>
+          ))}
           <MoonLoader
             color="#fff"
             size={70}
             className="m-auto"
-            loading={isFetching || isLoading}
+            loading={isFetching && allMessages?.length === 0}
           />
 
           {unsentMessages &&
