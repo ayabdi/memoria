@@ -135,7 +135,7 @@ export const Feed = () => {
   // scroll to the last fetched message every page load
   // this to prevent abrupt scrolling to the top when new messages are fetched
   useEffect(() => {
-    if (!allMessages?.length || !isFetched) return;
+    if (!messages?.length || !isFetched) return;
 
     // scroll to last message when user scrolls to top of page
     if (pageNo > 1) {
@@ -151,7 +151,7 @@ export const Feed = () => {
     setTimeout(() => {
       clearInterval(interval);
     }, 2000);
-  }, [allMessages]);
+  }, [messages]);
 
   // scroll to the bottom when new messages are added but not yet sent to the server
   useEffect(() => {

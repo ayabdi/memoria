@@ -164,7 +164,7 @@ export const SearchBar = () => {
       <img
         className="ml-auto inline h-6 cursor-pointer"
         src="/icons/filter.svg"
-        onClick={() => setShowOptions(true)}
+        onClick={() => setShowOptions(!showOptions)}
       />
       <img
         className="my-auto ml-2 h-5 cursor-pointer bg-inherit"
