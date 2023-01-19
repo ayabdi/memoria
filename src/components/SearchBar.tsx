@@ -144,7 +144,7 @@ export const SearchBar = () => {
   }, [showOptions]);
 
   return (
-    <div className="popover-el mx-auto -mt-0.5 flex 2xl:w-1/2 w-full md:w-3/4  min-w-[400px] max-w-[700px] rounded border-[0.1px] border-zinc-600 bg-[#36363B] px-2.5 py-0.5 text-white shadow">
+    <div className="popover-el mx-auto -mt-0.5 flex 2xl:w-1/2 w-full md:w-3/4  min-w-[370px] max-w-[700px] rounded border-[0.1px] border-zinc-600 bg-[#36363B] px-2.5 py-0.5 text-white shadow">
       <div>
         {showOptions && (
           <FilterOptions
