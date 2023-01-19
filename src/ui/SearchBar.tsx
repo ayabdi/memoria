@@ -10,6 +10,8 @@ import {
   ContentBlock,
 } from "draft-js";
 import "draft-js/dist/Draft.css";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 
 export const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
@@ -20,7 +22,7 @@ export const SearchBar = () => {
     EditorState.createWithContent(emptyContentState)
   );
   const editorText = editorState.getCurrentContent().getPlainText();
-  
+
   const strategy = (
     contentBlock: ContentBlock,
     callback: (start: number, end: number) => void
@@ -70,25 +72,37 @@ export const SearchBar = () => {
   };
 
   const insertText = (text: string) => {
-    setEditorState(
-      EditorState.moveFocusToEnd(
-        EditorState.push(
-          editorState,
-          convertFromRaw({
-            entityMap: {},
-            blocks: [
-              {
-                key: "637gr",
-                text,
-                type: "unstyled",
-                depth: 0,
-                inlineStyleRanges: [],
-                entityRanges: [],
-              },
-            ],
-          }),
-          "insert-characters"
-        )
+    let currentContent = editorState.getCurrentContent().getPlainText();
+
+    // Split the input text on ":"
+    const [term, value] = text.split(":");
+
+    // Check if the term is already present in the current content
+    const regex = new RegExp(`${term}:[^\\s]+`, "g");
+    currentContent = currentContent.replace(regex, `${term}:${value}`);
+
+    //Check if the term already exists
+    if (currentContent === editorState.getCurrentContent().getPlainText()) {
+      currentContent = text + " " + currentContent;
+    }
+
+    setEditorState((e) =>
+      EditorState.push(
+        editorState,
+        convertFromRaw({
+          entityMap: {},
+          blocks: [
+            {
+              key: "637gr",
+              text: currentContent,
+              type: "unstyled",
+              depth: 0,
+              inlineStyleRanges: [],
+              entityRanges: [],
+            },
+          ],
+        }),
+        "insert-characters"
       )
     );
   };
@@ -112,8 +126,8 @@ export const SearchBar = () => {
   }, [selectedTags]);
 
   useEffect(() => {
-    if(searchTerm?.length === 0) emptyState();
-  }, [searchTerm])
+    if (searchTerm?.length === 0) emptyState();
+  }, [searchTerm]);
 
   useEffect(() => {
     const handleClick = (e: any) => {
@@ -136,6 +150,7 @@ export const SearchBar = () => {
           <FilterOptions
             selectedTags={selectedTags}
             setSelectedTags={setSelectedTags}
+            insertText={insertText}
           />
         )}
       </div>
@@ -143,7 +158,8 @@ export const SearchBar = () => {
         <Editor
           editorState={editorState}
           onChange={handleEditorChange}
-          onFocus={() => {setShowOptions(true)}}
+          onFocus={() => setShowOptions(true)}
+          placeholder="Search..."
           handleReturn={(e) => {
             e.preventDefault();
             triggerSearch();
@@ -169,6 +185,7 @@ export const SearchBar = () => {
       <img
         className="my-auto ml-2 h-5 cursor-pointer bg-inherit"
         src="/icons/search.svg"
+        onClick={() => triggerSearch()}
       />
     </div>
   );
@@ -177,69 +194,111 @@ export const SearchBar = () => {
 interface FilterOptionsProps {
   selectedTags: string[];
   setSelectedTags: React.Dispatch<React.SetStateAction<string[]>>;
+  insertText: (text: string) => void;
 }
 const FilterOptions = (props: FilterOptionsProps) => {
-  const { selectedTags, setSelectedTags } = props;
+  const { selectedTags, setSelectedTags, insertText } = props;
 
-  const { data: tags } = trpc.message.allTags.useQuery();
+  const { data: tags } = trpc.message.allTags.useQuery(void 0, {
+    enabled: false,
+  });
+  const [showTags, setShowTags] = useState(false);
+
+  const [dateType, setDateType] = useState<"during" | "before" | "after">();
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const openDatePicker = (type: "during" | "before" | "after") => {
+    setShowDatePicker(true);
+    setDateType(type);
+  };
+
   return (
     <div className="popover-el absolute">
-      <div className="absolute -left-3  top-8 z-10 w-[50vw] min-w-[600px] max-w-[700px] origin-top-right  rounded-md  border-[0.5px] border-zinc-600 bg-[#36363B] pt-3 text-zinc-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-        {/* <div>
+      <div
+        className={`absolute -left-3  top-8 z-10 max-w-[700px] origin-top-right  rounded-md  border-[0.5px] border-zinc-600 bg-[#36363B] pt-3 text-zinc-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ${
+          showDatePicker ? "w-[320px]" : "min-w-[600px]"
+        }`}
+      >
+        {!showTags && !showDatePicker && (
+          <div className="popover-el mb-1">
             <div className="px-3 py-1 font-semibold uppercase">
               Search Options
             </div>
-            <div className="px-3 py-1.5 hover:bg-zinc-700">
+            <div
+              className="cursor-pointer px-3 py-1.5 hover:bg-zinc-700"
+              onClick={() => setShowTags(true)}
+            >
               <span className="font-semibold">tags: </span>
               <span className="ml-1 text-zinc-300">specific tags</span>
             </div>
-            <div className="px-3 py-1.5 hover:bg-zinc-700">
+            <div
+              className="cursor-pointer px-3 py-1.5 hover:bg-zinc-700"
+              onClick={() => openDatePicker("during")}
+            >
               <span className="font-semibold">during: </span>
               <span className="ml-1 text-zinc-300">specific date</span>
             </div>
-            <div className="px-3 py-1.5 hover:bg-zinc-700">
+            <div
+              className="cursor-pointer px-3 py-1.5 hover:bg-zinc-700"
+              onClick={() => openDatePicker("before")}
+            >
               <span className="font-semibold">before: </span>
               <span className="ml-1 text-zinc-300">before date</span>
             </div>
-            <div className="px-3 py-1.5 hover:bg-zinc-700">
+            <div
+              className="cursor-pointer px-3 py-1.5 hover:bg-zinc-700"
+              onClick={() => openDatePicker("after")}
+            >
               <span className="font-semibold">after: </span>
               <span className="ml-1 text-zinc-300">after date</span>
             </div>
-          </div> */}
-
-        <div className="popover-el mb-1">
-          <div className="mb-1 px-4 font-semibold uppercase">Tags</div>
-          {tags?.map((tag) => (
-            <div
-              key={tag.tagName}
-              className="py-2.5 px-4 hover:bg-zinc-700"
-              onClick={() => {
-                if (selectedTags?.find((t) => t === tag.tagName)) {
-                  setSelectedTags(
-                    selectedTags.filter((t) => t !== tag.tagName)
-                  );
-                } else {
-                  setSelectedTags([...selectedTags, tag.tagName]);
-                }
-              }}
-            >
-              <div className="my-auto flex">
-                <span
-                  className="my-auto inline-block h-5 w-5 rounded-full border text-center"
-                  style={{
-                    backgroundColor: tag.color.replace("1)", "0.3)"),
-                    borderColor: tag.color,
-                  }}
-                >
-                  {selectedTags?.find((t) => t === tag.tagName) && (
-                    <img src="/icons/check.svg" className="h-5" />
-                  )}
-                </span>
-                <p className="ml-3 text-zinc-300">{tag.tagName}</p>
+          </div>
+        )}
+        {showDatePicker && (
+          <DayPicker
+            mode="single"
+            onSelect={(d) => {
+              if (!d) return;
+              const text = `${dateType}:${d.toISOString().split("T")[0]}`;
+              insertText(text);
+            }}
+          />
+        )}
+        {showTags && (
+          <div className="popover-el mb-1">
+            <div className="mb-1 px-4 font-semibold uppercase">Tags</div>
+            {tags?.map((tag) => (
+              <div
+                key={tag.tagName}
+                className="py-2.5 px-4 hover:bg-zinc-700"
+                onClick={() => {
+                  if (selectedTags?.find((t) => t === tag.tagName)) {
+                    setSelectedTags(
+                      selectedTags.filter((t) => t !== tag.tagName)
+                    );
+                  } else {
+                    setSelectedTags([...selectedTags, tag.tagName]);
+                  }
+                }}
+              >
+                <div className="my-auto flex">
+                  <span
+                    className="my-auto inline-block h-5 w-5 rounded-full border text-center"
+                    style={{
+                      backgroundColor: tag.color.replace("1)", "0.3)"),
+                      borderColor: tag.color,
+                    }}
+                  >
+                    {selectedTags?.find((t) => t === tag.tagName) && (
+                      <img src="/icons/check.svg" className="h-5" />
+                    )}
+                  </span>
+                  <p className="ml-3 text-zinc-300">{tag.tagName}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

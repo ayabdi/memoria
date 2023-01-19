@@ -29,3 +29,6 @@
     background-color: inherit !important;
     white-space: nowrap;
 }
+.rdp-button:hover:not([disabled]) { 
+  color: black
+}
