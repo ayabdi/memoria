@@ -25,14 +25,16 @@ interface MessageBoxProps {
 export const MessageInputBox = (props: MessageBoxProps) => {
   const user = useSession().data?.user;
   const { onSubmit, mode } = props;
-  const [message, setMessage] = React.useState("");
+  
+  const [tagsToFilter] = useAtom(tagsToFilterAtom)
+  const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
+
+  const [message, setMessage] = useState("");
   const [markdownMode, setMarkdownMode] = useState(false);
   const [mdValue, setMdValue] = useState("***hello world!***");
-  const [tagsToFilter] = useAtom(tagsToFilterAtom)
-  
   const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
+
 
   const { data: allTags, refetch: refetchTags } = trpc.message.allTags.useQuery(void 0, {
     enabled: false,

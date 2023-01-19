@@ -1,6 +1,6 @@
 import { trpc } from "../utils/trpc";
-import { MessageInputBox } from "@/ui/MessageInputBox";
-import { MessageRow } from "@/ui/MessageRow";
+import { MessageInputBox } from "@/components/MessageInputBox";
+import { MessageRow } from "@/components/MessageRow";
 import { useEffect, useRef, useState } from "react";
 import {
   CreateMessageSchema,
@@ -11,7 +11,7 @@ import { MoonLoader } from "react-spinners";
 import { useAtom } from "jotai";
 import Avatar from "react-avatar";
 import {
-  allMessagesAtom,
+  displayedMessagesAtom,
   messageToEditAtom,
   searchTermAtom,
   tagsToFilterAtom,
@@ -19,7 +19,7 @@ import {
 
 export const Feed = () => {
   const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom);
-  const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
+  const [displayedMessages, setDisplayedMessages] = useAtom(displayedMessagesAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
   const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
   const [pageNo, setPageNo] = useState<number>(1);
@@ -42,9 +42,9 @@ export const Feed = () => {
       searchTerm: searchTerm || undefined,
     },
     {
-      enabled: allMessages === null || searchTerm !== null,
+      enabled: displayedMessages === null || searchTerm !== null,
       onSuccess: (data) => {
-        if (data?.length) setAllMessages(data);
+        if (data?.length) setDisplayedMessages(data);
         if (data?.length < 40) setHasMoreMessages(false);
       },
     }
@@ -61,7 +61,7 @@ export const Feed = () => {
     mutate(message, {
       onSuccess: () =>
         refetch().then(({ data }) => {
-          if (data?.length) setAllMessages(data);
+          if (data?.length) setDisplayedMessages(data);
           removeUnsentMessage(message);
           scrollToBottom();
         }),
@@ -71,7 +71,7 @@ export const Feed = () => {
 
   const handleEdit = (message: EditMessageSchema) => {
     editMessage(message);
-    setAllMessages((prev) => {
+    setDisplayedMessages((prev) => {
       if (!prev) return prev;
       const index = prev.findIndex((m) => m.id === message!.id);
       if (index === -1) return prev;
@@ -82,7 +82,7 @@ export const Feed = () => {
   };
   const handleDelete = (id: string) => {
     deleteMessage(id);
-    setAllMessages((prev) => {
+    setDisplayedMessages((prev) => {
       if (!prev) return prev;
       const index = prev.findIndex((m) => m.id === id);
       if (index === -1) return prev;
@@ -128,7 +128,7 @@ export const Feed = () => {
 
   const resetState = () => {
     setTagsToFilter([]);
-    setAllMessages([]);
+    setDisplayedMessages([]);
     setSearchTerm("");
   };
 
@@ -176,7 +176,7 @@ export const Feed = () => {
   useEffect(() => {
     if (pageNo > 1)
       refetch().then(({ data }) => {
-        if (data?.length) setAllMessages((prev) => [...data, ...prev!]);
+        if (data?.length) setDisplayedMessages((prev) => [...data, ...prev!]);
         else {
           setHasMoreMessages(false);
         }
@@ -187,7 +187,7 @@ export const Feed = () => {
     if (!tagsToFilter?.length) return;
 
     setSearchTerm(`tag:${tagsToFilter?.map((tag) => tag.tagName).join(",")}`);
-    setAllMessages([]);
+    setDisplayedMessages([]);
   }, [tagsToFilter]);
 
   return (
@@ -209,7 +209,7 @@ export const Feed = () => {
           ref={chatContainerRef}
           className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
         >
-          {allMessages?.map((message, idx) => (
+          {displayedMessages?.map((message, idx) => (
             <div
               id={message.id}
               key={idx}
@@ -246,7 +246,7 @@ export const Feed = () => {
             color="#fff"
             size={70}
             className="m-auto"
-            loading={isFetching && !allMessages?.length}
+            loading={isFetching && !displayedMessages?.length}
           />
           {unsentMessages &&
             unsentMessages.map((message, idx) => (

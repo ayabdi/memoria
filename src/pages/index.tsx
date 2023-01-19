@@ -1,9 +1,9 @@
 import { type NextPage } from "next";
 import Head from "next/head";
 import { useSession } from "next-auth/react";
-import { Feed } from "@/ui/Feed";
-import { Login } from "@/ui/Login";
-import { SearchBar } from "@/ui/SearchBar";
+import { Feed } from "@/components/Feed";
+import { Login } from "@/components/Login";
+import { SearchBar } from "@/components/SearchBar";
 
 const App: NextPage = () => {
   const { data: session } = useSession();

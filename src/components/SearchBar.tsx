@@ -1,7 +1,7 @@
 import { trpc } from "@/utils/trpc";
 import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
-import { allMessagesAtom, searchTermAtom } from "../store";
+import { displayedMessagesAtom, searchTermAtom } from "../store";
 import {
   Editor,
   EditorState,
@@ -15,7 +15,7 @@ import "react-day-picker/dist/style.css";
 
 export const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
-  const [allMessages, setAllMessages] = useAtom(allMessagesAtom);
+  const [displayedMessages, setDisplayedMessages] = useAtom(displayedMessagesAtom);
   const [showOptions, setShowOptions] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [editorState, setEditorState] = useState(() =>
@@ -67,7 +67,7 @@ export const SearchBar = () => {
     if (!editorText.length) return;
 
     setSearchTerm(editorText);
-    setAllMessages([]);
+    setDisplayedMessages([]);
     setShowOptions(false);
   };
 
