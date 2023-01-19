@@ -56,7 +56,7 @@ export const messageRouter = router({
           },
           ...tagNames?.length && {
             tags: {
-              every: {
+              some: {
                 tag: {
                   tagName: {
                     in: tagNames,
