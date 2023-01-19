@@ -19,7 +19,7 @@ export const SearchBar = () => {
   const [editorState, setEditorState] = useState(() =>
     EditorState.createWithContent(emptyContentState)
   );
-
+  const editorText = editorState.getCurrentContent().getPlainText();
   
   const strategy = (
     contentBlock: ContentBlock,
@@ -62,10 +62,9 @@ export const SearchBar = () => {
   };
 
   const triggerSearch = () => {
-    if (!editorState.getCurrentContent().getPlainText().length) return;
+    if (!editorText.length) return;
 
-    const term = editorState.getCurrentContent().getPlainText();
-    setSearchTerm(term);
+    setSearchTerm(editorText);
     setAllMessages([]);
     setShowOptions(false);
   };
@@ -129,6 +128,7 @@ export const SearchBar = () => {
       document.removeEventListener("click", handleClick);
     };
   }, [showOptions]);
+
   return (
     <div className="popover-el mx-auto -mt-0.5 flex w-1/2 min-w-[600px] max-w-[700px] rounded border-[0.1px] border-zinc-600 bg-[#36363B] px-2.5 py-0.5 text-white shadow">
       <div>
@@ -152,7 +152,7 @@ export const SearchBar = () => {
         />
       </div>
 
-      {editorState.getCurrentContent().getPlainText() && (
+      {editorText && (
         <img
           className="mt-0.5 ml-2 mr-1 h-5 cursor-pointer text-white"
           src="/icons/x.svg"

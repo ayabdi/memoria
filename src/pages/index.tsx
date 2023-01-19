@@ -3,7 +3,7 @@ import Head from "next/head";
 import { useSession } from "next-auth/react";
 import { Feed } from "@/ui/Feed";
 import { Login } from "@/ui/Login";
-import { SearchBar } from "@/ui/components/SearchBar";
+import { SearchBar } from "@/ui/SearchBar";
 
 const App: NextPage = () => {
   const { data: session } = useSession();
@@ -17,7 +17,7 @@ const App: NextPage = () => {
       </Head>
       <main className="flex h-screen flex-col items-center justify-center bg-zinc-800">
         <div className="fixed z-10 top-0 h-[55px] w-full border-b-[0.5px] border-slate-700 py-4">
-          <SearchBar />
+          {session?.user  && <SearchBar /> }
         </div>
         {session?.user ? <Feed /> : <Login />}
       </main>

@@ -1,6 +1,6 @@
 import { trpc } from "../utils/trpc";
-import { MessageInputBox } from "@/ui/components/MessageInputBox";
-import { MessageRow } from "@/ui/components/MessageRow";
+import { MessageInputBox } from "@/ui/MessageInputBox";
+import { MessageRow } from "@/ui/MessageRow";
 import { useEffect, useRef, useState } from "react";
 import {
   CreateMessageSchema,
@@ -15,7 +15,7 @@ import {
   messageToEditAtom,
   searchTermAtom,
   tagsToFilterAtom,
-} from "./store";
+} from "../store";
 
 export const Feed = () => {
   const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom);
@@ -246,7 +246,7 @@ export const Feed = () => {
             color="#fff"
             size={70}
             className="m-auto"
-            loading={isFetching && allMessages?.length === 0}
+            loading={isFetching && !allMessages?.length}
           />
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
