@@ -44,7 +44,8 @@ export const messageRouter = router({
       const after = extractAfterDate(input?.searchTerm);
       const before = extractBeforeDate(input?.searchTerm);
 
-      const result = await ctx.prisma.message.findMany({
+
+      let result = await ctx.prisma.message.findMany({
         take,
         skip,
         where: {
@@ -55,10 +56,10 @@ export const messageRouter = router({
           },
           ...tagNames?.length && {
             tags: {
-              some: {
+              every: {
                 tag: {
                   tagName: {
-                    in: tagNames
+                    in: tagNames,
                   },
                 },
               },
@@ -88,6 +89,13 @@ export const messageRouter = router({
           },
         },
       });
+
+      // return only resuts that match all tags. The query above will return results that match any tag
+      result = result.filter((message) => {
+        const messageTags = message.tags.map((tag) => tag.tag.tagName);
+        return tagNames.every((tag) => messageTags.includes(tag));
+      });
+
       return formatResult(result).reverse();
     }),
 
