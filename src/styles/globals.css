@@ -27,7 +27,7 @@
 
 .wmde-markdown{
     background-color: inherit !important;
-    white-space: nowrap;
+    white-space: initial !important
 }
 .rdp-button:hover:not([disabled]) { 
   color: black

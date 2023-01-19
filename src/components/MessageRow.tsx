@@ -80,7 +80,7 @@ export const MessageRow = (props: MessageRowProps) => {
             ))}
           </div>
           {message.type === "markdown" ? (
-            <Markdown source={message.content} style={{ color: isLoadingMessage ? "grey" : "white" }} />
+            <Markdown source={message.content} style={{ color: isLoadingMessage ? "grey" : "white" }}/>
           ) : (
             <p className={`${ isLoadingMessage ? "text-zinc-500" :"text-white"}`}>{message.content}</p>
           )}

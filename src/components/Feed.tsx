@@ -192,7 +192,7 @@ export const Feed = () => {
 
   return (
     <>
-      <div className="mt-auto flex h-[calc(100vh_-_55px)] w-1/2 min-w-[600px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
+      <div className="mt-auto flex h-[calc(100vh_-_55px)] 2xl:w-1/2 w-full md:w-3/4  min-w-[400px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
         {tagsToFilter?.length || !!searchTerm ? (
           <div className="flex w-full px-4 py-4 text-lg text-white">
             <img

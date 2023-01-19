@@ -16,7 +16,7 @@ const App: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen flex-col items-center justify-center bg-zinc-800">
-        <div className="fixed z-10 top-0 h-[55px] w-full border-b-[0.5px] border-slate-700 py-4">
+        <div className="fixed z-10 top-0 h-[55px] w-full border-b-[0.5px] border-slate-700 py-4 px-2">
           {session?.user  && <SearchBar /> }
         </div>
         {session?.user ? <Feed /> : <Login />}
