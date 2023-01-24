@@ -50,7 +50,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         createdAt: messageToEdit?.createdAt,
       }),
       content: markdownMode ? mdValue : cleanMessage(message),
-      type: markdownMode ? "markdown" : "text",
+      type: markdownMode ? "markdown" : "regular",
       from: user?.name ?? user?.email ?? "Anonymous",
       tags: tags.map((tag) => {
         const existingTag = allTags?.find(

@@ -23,12 +23,12 @@ export const MessageSchema = z.object({
     updatedAt: z.date().optional(),
     content: z.string(),
     from: z.string(),
-    type: z.string(),
+    type: z.enum(["regular", "markdown", "prompt"]),
     userId: z.string().optional(),
     tags: z.array(TagSchema).optional(),
 });
 
-export const CreateMessageSchema = MessageSchema.omit({id: true})
+export const CreateMessageSchema = MessageSchema.omit({ id: true })
 export const EditMessageSchema = MessageSchema
 
 export const GetMessagesSchema = z.object({
