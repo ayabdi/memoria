@@ -2,6 +2,15 @@ import { User } from "@prisma/client";
 import { listFiles, openFile, saveFile } from "../lib/aws";
 import { gptCompletion, gptEmbedding } from "../lib/openai";
 import { MessageSchema } from "@/types/messages.schema";
+import { z } from "zod";
+
+export const EmbeddingSchema = z.object({
+    vector: z.array(z.number()),
+    content: z.string(),
+    createdAt: z.date(),
+    id: z.string()
+});
+export type Embedding = z.infer<typeof EmbeddingSchema>;
 
 export const createEmbedding = async (message: MessageSchema, pathPrefix: 'message_logs' | 'chat_logs') => {
     const { content, userId, id, createdAt } = message;
@@ -41,22 +50,23 @@ export function similarity(v1: number[], v2: number[]): number {
     return dotProduct / (norm1 * norm2);
 }
 
-export function fetchMemories(vector: number[], logs: any[]): any[] {
+export function fetchMemories(vector: number[], logs: Embedding[]): string[] {
     const scores = [];
     for (const log of logs) {
         if (vector === log.vector) {
             continue;
         }
         const score = similarity(log.vector, vector);
-        log.score = score;
-        scores.push(log);
+        scores.push({ ...log, score });
     }
     const ordered = scores.sort((a, b) => b.score - a.score);
     const top = ordered.filter((log) => log.score > 0.75);
-    return top.length > 0 ? top : ordered.slice(0, 10);
+
+    if (top.length > 0) return top.map((l) => l.content);
+    return ordered.slice(0, 10).map((l) => l.content);
 }
 
-export async function loadEmbeddings(path: string): Promise<any[]> {
+export async function loadEmbeddings(path: string): Promise<Embedding[]> {
     const data = await listFiles(path);
     const jsonFiles = data.filter((obj) => obj.endsWith('.json'));
 
