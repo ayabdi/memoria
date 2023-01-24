@@ -24,7 +24,7 @@ export async function gptEmbedding(input: string, model: string = 'text-embeddin
 }
 
 
-export async function gptCompletion(prompt: string, user: User): Promise<string> {
+export async function gptCompletion(prompt: string, stop: string[]): Promise<string> {
     const max_retry = 5;
     let retry = 0;
     prompt = prompt.replace(/[^\x00-\x7F]/g, "");
@@ -38,7 +38,7 @@ export async function gptCompletion(prompt: string, user: User): Promise<string>
                 top_p: 1.0,
                 frequency_penalty: 0.0,
                 presence_penalty: 0.0,
-                stop: [`${user.email}:`, 'MEMORIA_BOT:']
+                stop
             });
             if (!response?.data?.choices || response?.data?.choices.length === 0) {
                 return 'GPT3 error: No response';

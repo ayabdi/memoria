@@ -13,7 +13,8 @@ export const createEmbedding = async (message: MessageSchema) => {
 }
 
 export const createCompletion = async (prompt: string, user: User) => {
-    const result = await gptCompletion(prompt, user)
+    const stop = [`${user.email}:`, 'MEMORIA_BOT:'];
+    const result = await gptCompletion(prompt, stop);
 
     // save to logs
     const filename = `${Date.now()}_gpt3.txt`;
