@@ -23,7 +23,7 @@ export const MessageSchema = z.object({
     updatedAt: z.date().optional(),
     content: z.string(),
     from: z.string(),
-    type: z.enum(["regular", "markdown", "prompt"]),
+    type: z.string(),
     userId: z.string().optional(),
     tags: z.array(TagSchema).optional(),
 });
