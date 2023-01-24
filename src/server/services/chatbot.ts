@@ -3,13 +3,13 @@ import { listFiles, openFile, saveFile } from "../lib/aws";
 import { gptCompletion, gptEmbedding } from "../lib/openai";
 import { MessageSchema } from "@/types/messages.schema";
 
-export const createEmbedding = async (message: MessageSchema) => {
+export const createEmbedding = async (message: MessageSchema, pathPrefix: 'message_logs' | 'chat_logs') => {
     const { content, userId, id, createdAt } = message;
 
     const vector = await gptEmbedding(message.content);
 
     const jsonContent = JSON.stringify({ vector, content, createdAt, id });
-    await saveFile(`message_vectors/${userId}/${id}.json`, jsonContent);
+    await saveFile(`${pathPrefix}/${userId}/${id}.json`, jsonContent);
 }
 
 export const createCompletion = async (prompt: string, user: User) => {
@@ -56,20 +56,8 @@ export function fetchMemories(vector: number[], logs: any[]): any[] {
     return top.length > 0 ? top : ordered.slice(0, 10);
 }
 
-export async function loadConvo(userId: string): Promise<any[]> {
-    const data = await listFiles(`message_vectors/${userId}`);
-    const jsonFiles = data.filter((obj) => obj.endsWith('.json'));
-
-    const result = [];
-    for (const jsonFile of jsonFiles) {
-        const jsonData = await loadJson(jsonFile);
-        result.push(jsonData);
-    }
-    return result.sort((a, b) => a.time - b.time);
-}
-
-export async function loadMessages(userId: string): Promise<any[]> {
-    const data = await listFiles(`messages/${userId}`);
+export async function loadEmbeddings(path: string): Promise<any[]> {
+    const data = await listFiles(path);
     const jsonFiles = data.filter((obj) => obj.endsWith('.json'));
 
     const result = [];
