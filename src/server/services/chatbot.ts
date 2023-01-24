@@ -1,7 +1,7 @@
 import { User } from "@prisma/client";
 import { listFiles, openFile, saveFile } from "../lib/aws";
 import { gptCompletion, gptEmbedding } from "../lib/openai";
-import { MessageSchema } from "@/types/messages.schema";
+import { MessageSchema, ServerMessageType } from "@/types/messages.schema";
 import { z } from "zod";
 
 export const EmbeddingSchema = z.object({
@@ -12,7 +12,7 @@ export const EmbeddingSchema = z.object({
 });
 export type Embedding = z.infer<typeof EmbeddingSchema>;
 
-export const createEmbedding = async (message: MessageSchema, pathPrefix: 'message_logs' | 'chat_logs') => {
+export const createEmbedding = async (message: ServerMessageType, pathPrefix: 'message_logs' | 'chat_logs') => {
     const { content, userId, id, createdAt } = message;
 
     const vector = await gptEmbedding(message.content);
