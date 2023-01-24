@@ -1,7 +1,9 @@
-import { User } from "@prisma/client";
+
 import { listFiles, openFile, saveFile } from "../lib/aws";
 import { gptCompletion, gptEmbedding } from "../lib/openai";
-import { MessageSchema, ServerMessageType } from "@/types/messages.schema";
+import { ServerMessageType } from "@/types/messages.schema";
+import fs from "fs";
+import { User } from "next-auth";
 import { z } from "zod";
 
 export const EmbeddingSchema = z.object({
@@ -12,13 +14,43 @@ export const EmbeddingSchema = z.object({
 });
 export type Embedding = z.infer<typeof EmbeddingSchema>;
 
-export const createEmbedding = async (message: ServerMessageType, pathPrefix: 'message_logs' | 'chat_logs') => {
-    const { content, userId, id, createdAt } = message;
+export const executePrompt = async (input: string, user: User) => {
+    const [vector, conversations, messages] = await Promise.all([
+        createChatEmbedding(input, user.id),
+        loadEmbeddings('chat_logs', 20),
+        loadEmbeddings('message_logs')
+    ]);
+    const memories = fetchMemories(vector, messages);
 
-    const vector = await gptEmbedding(message.content);
+    const prompt = fs.readFileSync('prompt_template.txt', 'utf8')
+        .replace('<<MEMORIES>>', memories.join('\n\n'))
+        .replace('<<CONVERSATIONS>>', conversations.join('\n\n'))
 
-    const jsonContent = JSON.stringify({ vector, content, createdAt, id });
-    await saveFile(`${pathPrefix}/${userId}/${id}.json`, jsonContent);
+    // get response
+    const response = await createCompletion(prompt, user);
+    createChatEmbedding(response, 'MEMORIA_BOT');
+
+    return response
+}
+
+export const createMessageEmbedding = async (message: ServerMessageType) => {
+    const { content, userId, id, createdAt, tags } = message;
+    const tagNames = tags.map(tag => tag.tag.tagName).join(',');
+    const combined = `${content} \n Tags: ${tagNames} \n Date: ${createdAt}`
+    const vector = await gptEmbedding(combined);
+
+    const jsonContent = JSON.stringify({ vector, combined, createdAt, id });
+    await saveFile(`message_logs/${userId}/${id}.json`, jsonContent);
+
+    return vector
+}
+
+const createChatEmbedding = async (message: string, from: string) => {
+    const vector = await gptEmbedding(message);
+    const jsonContent = JSON.stringify({ vector, message });
+    await saveFile(`chat_logs/${from}-${Date.now()}.json`, jsonContent);
+
+    return vector
 }
 
 export const createCompletion = async (prompt: string, user: User) => {
@@ -28,6 +60,8 @@ export const createCompletion = async (prompt: string, user: User) => {
     // save to logs
     const filename = `${Date.now()}_gpt3.txt`;
     await saveFile(`gpt3_logs/${user.id}/${filename}`, `${prompt}\n\n==========\n\n${result}`);
+
+    return result;
 }
 
 export async function loadJson(filepath: string): Promise<any> {
@@ -66,14 +100,16 @@ export function fetchMemories(vector: number[], logs: Embedding[]): string[] {
     return ordered.slice(0, 10).map((l) => l.content);
 }
 
-export async function loadEmbeddings(path: string): Promise<Embedding[]> {
+export async function loadEmbeddings(path: string, limit?: number): Promise<Embedding[]> {
     const data = await listFiles(path);
     const jsonFiles = data.filter((obj) => obj.endsWith('.json'));
 
     const result = [];
-    for (const jsonFile of jsonFiles) {
-        const jsonData = await loadJson(jsonFile);
-        result.push(jsonData);
+    for (const file of jsonFiles) {
+        const content = await loadJson(file);
+        result.push(EmbeddingSchema.parse(content));
+        if (limit && result.length >= limit) break;
     }
-    return result.sort((a, b) => a.time - b.time);
+    return result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
+

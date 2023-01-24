@@ -1,11 +1,15 @@
+import { createCompletion, createMessageEmbedding, executePrompt } from "@/server/services/chatbot";
 import { router, publicProcedure } from "../trpc";
 import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, type ServerMessageType } from "@/types/messages.schema";
 import { extractAfterDate, extractBeforeDate, extractDuringDate, extractSearchTermFromSearchString as extractSearchTerm, extractTagsFromSearchTerm as extractTags } from "@/utils/funtions";
 import { z } from "zod";
+
 export const messageRouter = router({
   createMessage: publicProcedure
     .input(CreateMessageSchema)
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const { content, type, from } = input;
+
       const userId = ctx.session?.user?.id || null;
       if (!userId) throw new Error('User not logged in');
 
@@ -16,14 +20,48 @@ export const messageRouter = router({
         };
       });
 
-      return ctx.prisma.message.create({
+      const result = await ctx.prisma.message.create({
         data: {
-          content: input.content,
-          type: input.type,
+          content,
+          type,
           userId,
-          from: input.from,
+          from,
           ...(tagsToAdd?.length && { tags: { create: tagsToAdd } }),
         },
+        include: {
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
+        }
+      });
+
+      return result;
+    }),
+  executePrompt: publicProcedure
+    .input(z.object({ prompt: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { prompt } = input;
+      const user = ctx.session?.user || null;
+      if (!user) throw new Error('User not logged in');
+
+      const response = await executePrompt(prompt, user);
+
+      return await ctx.prisma.message.create({
+        data: {
+          content: response,
+          type: 'regular',
+          userId: user.id,
+          from: 'bot',
+        },
+        include: {
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
+        }
       });
     }),
 
@@ -39,7 +77,7 @@ export const messageRouter = router({
 
       const tagNames = extractTags(input?.searchTerm) || [];
       const searchTerm = extractSearchTerm(input?.searchTerm) || "";
-      
+
       const during = extractDuringDate(input?.searchTerm);
       const after = extractAfterDate(input?.searchTerm);
       const before = extractBeforeDate(input?.searchTerm);
