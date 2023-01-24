@@ -8,9 +8,9 @@ const config = new Configuration({
 const openai = new OpenAIApi(config);
 
 
-export async function gptEmbedding(input: string, model: string = 'text-embedding-ada-002'): Promise<number[]> {
+export async function gptEmbedding(input: string): Promise<number[]> {
     const response = await openai.createEmbedding({
-        model,
+        model: 'text-davinci-003',
         input
     });
     if (!response.data.data || response.data.data.length === 0)
