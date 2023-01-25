@@ -21,8 +21,8 @@ export const executePrompt = async (prompt: string, user: User) => {
         loadEmbeddings(`message_logs/${user.id}`, 20)
     ]);
     const memories = fetchMemories(promptVector, messages);
-
-    const fullPrompt = fs.readFileSync('./src/server/services/prompt_template.txt', 'utf8')
+    const template = await openFile('prompt_template.txt');
+    const fullPrompt = template
         .replace('<<MEMORIES>>', memories.join('\n\n'))
         .replace('<<CONVERSATION>>', conversations.map(c => c.content).reverse().join('\n\n'))
 
