@@ -33,3 +33,8 @@ export const listFiles = async (prefix: string): Promise<string[]> => {
 
     return data.Contents.map((obj) => obj.Key || '');
 }
+
+export const deleteFile = async (filepath: string): Promise<void> => {
+    const params = { Bucket, Key: filepath };
+    await s3.deleteObject(params).promise();
+}

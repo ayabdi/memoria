@@ -1,21 +1,26 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
-import ContentEditable from "react-contenteditable";
+import React, { useEffect, useState } from "react";
+import {
+  Editor,
+  EditorState,
+  CompositeDecorator,
+  convertFromRaw,
+  ContentBlock,
+  ContentState,
+  getDefaultKeyBinding,
+  RichUtils,
+} from "draft-js";
 import { Popover } from "@headlessui/react";
 import {
   CreateMessageSchema,
   EditMessageSchema,
   TagSchema,
 } from "@/types/messages.schema";
-import { Tag } from "@prisma/client";
-import { cleanMessage } from "@/utils/funtions";
 import { MarkdownEditor } from "./Markdown";
 import { useAtom } from "jotai";
 import { messageToEditAtom, tagsToFilterAtom } from "../store";
 import { trpc } from "@/utils/trpc";
 import { useSession } from "next-auth/react";
+import { cleanMessage } from "@/utils/common";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema | EditMessageSchema) => void;
@@ -25,32 +30,79 @@ interface MessageBoxProps {
 export const MessageInputBox = (props: MessageBoxProps) => {
   const user = useSession().data?.user;
   const { onSubmit, mode } = props;
-  
-  const [tagsToFilter] = useAtom(tagsToFilterAtom)
+
+  const [tagsToFilter] = useAtom(tagsToFilterAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
 
-  const [message, setMessage] = useState("");
-  const [markdownMode, setMarkdownMode] = useState(false);
+  const [inputMode, setInputMode] = useState<"regular" | "markdown" | "prompt">(
+    "regular"
+  );
   const [mdValue, setMdValue] = useState("***hello world!***");
   const [tags, setTags] = useState<{ color: string; tagName: string }[]>([]);
   const [tagInput, setTagInput] = useState("");
 
+  const { data: allTags, refetch: refetchTags } = trpc.message.allTags.useQuery(
+    void 0,
+    {
+      enabled: false,
+    }
+  );
+  const [editorState, setEditorState] = useState(() =>
+    EditorState.createWithContent(emptyContentState)
+  );
+  const editorText = editorState.getCurrentContent().getPlainText();
 
-  const { data: allTags, refetch: refetchTags } = trpc.message.allTags.useQuery(void 0, {
-    enabled: false,
-  });
+  const strategy = (
+    contentBlock: ContentBlock,
+    callback: (start: number, end: number) => void
+  ) => {
+    const text = contentBlock.getText();
+    const regex = /\/chat/g;
+    let matchArr, start;
+    while ((matchArr = regex.exec(text)) !== null) {
+      start = matchArr.index;
+      setInputMode("prompt");
+      callback(start, start + matchArr[0].length);
+    }
+    if (!text.includes("/chat")) {
+      setInputMode("regular");
+    }
+  };
 
-  const contentEditable = React.useRef<HTMLDivElement>(null);
-  
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const searchDecorator = new CompositeDecorator([
+    {
+      strategy,
+      component: (props: any) => {
+        return (
+          <span className="rounded bg-zinc-800 py-0.5 px-1 text-yellow-400">
+            {props.children}
+          </span>
+        );
+      },
+    },
+  ]);
+  const handleEditorChange = (newEditorState: EditorState) => {
+    setEditorState(
+      EditorState.set(newEditorState, { decorator: searchDecorator })
+    );
+  };
+
+  const emptyState = () => {
+    setEditorState(
+      EditorState.moveFocusToEnd(
+        EditorState.push(editorState, emptyContentState, "insert-characters")
+      )
+    );
+  };
+
+  const handleSubmit = () => {
     onSubmit({
       ...(mode === "edit" && {
         id: messageToEdit?.id,
         createdAt: messageToEdit?.createdAt,
       }),
-      content: markdownMode ? mdValue : cleanMessage(message),
-      type: markdownMode ? "markdown" : "regular",
+      content: inputMode === "markdown" ? mdValue : cleanMessage(editorText),
+      type: inputMode,
       from: user?.name ?? user?.email ?? "Anonymous",
       tags: tags.map((tag) => {
         const existingTag = allTags?.find(
@@ -65,7 +117,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
     });
     refetchTags();
     // reset state
-    markdownMode ? setMdValue("") : setMessage("");
+    inputMode === "markdown" ? setMdValue("") : emptyState();
     setTags([]);
   };
 
@@ -107,10 +159,14 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
     if (messageToEdit.type === "markdown") {
       setMdValue(messageToEdit.content);
-      setMarkdownMode(true);
+      setInputMode("markdown");
     } else {
-      setMessage(messageToEdit.content);
-      setMarkdownMode(false);
+      setEditorState(
+        EditorState.createWithContent(
+          ContentState.createFromText(messageToEdit.content)
+        )
+      );
+      setInputMode("regular");
     }
   }, []);
 
@@ -193,9 +249,9 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         </div>
 
         <button
-          onClick={() => setMarkdownMode(!markdownMode)}
+          onClick={() => setInputMode("regular")}
           className={`ml-auto h-6 cursor-pointer rounded-xl border-[1.5px] px-2.5 text-sm text-zinc-200 shadow hover:bg-zinc-700 ${
-            markdownMode
+            inputMode === "markdown"
               ? "border-green-700 bg-green-700/10"
               : "border-zinc-500"
           }`}
@@ -203,22 +259,27 @@ export const MessageInputBox = (props: MessageBoxProps) => {
           Markdown Mode
           <span
             className={`mb-0.5 ml-1.5 inline-block h-1.5 w-1.5 rounded-full  ${
-              markdownMode ? "bg-green-600" : "bg-zinc-500"
+              inputMode === "markdown" ? "bg-green-600" : "bg-zinc-500"
             }`}
           ></span>
         </button>
       </div>
-      <form className="flex flex-col" onSubmit={handleSubmit}>
-        {!markdownMode ? (
-          <ContentEditable
-            className="mt-3.5 h-[70px] w-full resize-none bg-[#36363B] text-white outline-none"
-            innerRef={contentEditable}
-            html={message} // innerHTML of the editable div
-            disabled={false} // use true to disable editing
-            onChange={(e) => setMessage(e.target.value)}
-            tagName="div"
-            placeholder="Jot down your thoughts..."
-          />
+      <div className="flex flex-col text-white">
+        {inputMode === "regular" || "prompt" ? (
+          <div className="my-2 h-max max-h-[300px] min-h-[70px] px-0.5">
+            <Editor
+              editorState={editorState}
+              onChange={handleEditorChange}
+              placeholder="Jot down your thoughts..."
+              handleReturn={(e) => {
+                // add new line on enter
+                setEditorState(RichUtils.insertSoftNewline(editorState));
+
+                if (e.shiftKey) handleSubmit();
+                return "handled";
+              }}
+            />
+          </div>
         ) : (
           <div className="my-2 -ml-2 rounded-md bg-[#36363B]">
             <MarkdownEditor
@@ -251,7 +312,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
             <img className="mr-2 h-7" src="/icons/send.svg" />
           </button>
         )}
-      </form>
+      </div>
     </div>
   );
 };
@@ -291,3 +352,19 @@ const randomColor = () => {
   ];
   return colors[Math.floor(Math.random() * colors.length)];
 };
+
+const emptyContentState = convertFromRaw({
+  entityMap: {},
+  blocks: [
+    {
+      key: "637gr",
+      text: "",
+      type: "unstyled",
+      depth: 0,
+
+      inlineStyleRanges: [],
+      entityRanges: [],
+      data: {},
+    },
+  ],
+});

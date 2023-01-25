@@ -1,7 +1,7 @@
-import { createCompletion, createMessageEmbedding, executePrompt } from "@/server/services/chatbot";
+import { createMessageEmbedding, executePrompt } from "@/server/services/chatbot";
 import { router, publicProcedure } from "../trpc";
 import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, type ServerMessageType } from "@/types/messages.schema";
-import { extractAfterDate, extractBeforeDate, extractDuringDate, extractSearchTermFromSearchString as extractSearchTerm, extractTagsFromSearchTerm as extractTags } from "@/utils/funtions";
+import { extractAfterDate, extractBeforeDate, extractDuringDate, extractSearchTermFromSearchString as extractSearchTerm, extractTagsFromSearchTerm as extractTags } from "@/utils/common";
 import { z } from "zod";
 
 export const messageRouter = router({
@@ -36,7 +36,8 @@ export const messageRouter = router({
           },
         }
       });
-
+      
+      if (type !=='prompt') await createMessageEmbedding(result);
       return result;
     }),
   executePrompt: publicProcedure

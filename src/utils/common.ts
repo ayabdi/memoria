@@ -1,7 +1,7 @@
 
 export const cleanMessage = (message: string) => {
     // replace <div> and </div> and <br> with new lines
-    return message.replace(/<div>/g, "\n").replace(/<\/div>/g, "").replace(/<br>/g, "\n");
+    return message.replace(/<div>/g, "\n").replace(/<\/div>/g, "").replace(/<br>/g, "\n").replace("/chat", "")
 }
 
 export const extractTagsFromSearchTerm = (searchTerm: string | undefined) => {
@@ -28,3 +28,4 @@ export const extractSearchTermFromSearchString = (searchString: string | undefin
     // extract search term from search string
     return searchString?.replace(/tag:([^ ]*)/g, "").replace(/during:([^ ]*)/g, "").replace(/after:([^ ]*)/g, "").replace(/before:([^ ]*)/g, "") || null;
 }
+

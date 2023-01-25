@@ -1,5 +1,5 @@
 
-import { listFiles, openFile, saveFile } from "../lib/aws";
+import { deleteFile, listFiles, openFile, saveFile } from "../lib/aws";
 import { gptCompletion, gptEmbedding } from "../lib/openai";
 import { ServerMessageType } from "@/types/messages.schema";
 import fs from "fs";
@@ -9,46 +9,51 @@ import { z } from "zod";
 export const EmbeddingSchema = z.object({
     vector: z.array(z.number()),
     content: z.string(),
-    createdAt: z.date(),
-    id: z.string()
+    createdAt: z.string(),
+    id: z.string().optional(),
 });
 export type Embedding = z.infer<typeof EmbeddingSchema>;
 
-export const executePrompt = async (input: string, user: User) => {
-    const [vector, conversations, messages] = await Promise.all([
-        createChatEmbedding(input, user.id),
-        loadEmbeddings('chat_logs', 20),
-        loadEmbeddings('message_logs')
+export const executePrompt = async (prompt: string, user: User) => {
+    const promptVector = await createChatEmbedding(prompt, user.id, user.email ?? "YOU");
+    const [conversations, messages] = await Promise.all([
+        loadEmbeddings(`chat_logs/${user.id}`, 20),
+        loadEmbeddings(`message_logs/${user.id}`, 20)
     ]);
-    const memories = fetchMemories(vector, messages);
+    const memories = fetchMemories(promptVector, messages);
 
-    const prompt = fs.readFileSync('prompt_template.txt', 'utf8')
+    const fullPrompt = fs.readFileSync('./src/server/services/prompt_template.txt', 'utf8')
         .replace('<<MEMORIES>>', memories.join('\n\n'))
-        .replace('<<CONVERSATIONS>>', conversations.join('\n\n'))
+        .replace('<<CONVERSATION>>', conversations.map(c => c.content).reverse().join('\n\n'))
 
-    // get response
-    const response = await createCompletion(prompt, user);
-    createChatEmbedding(response, 'MEMORIA_BOT');
+    console.log(fullPrompt)
+    const response = await createCompletion(fullPrompt, user);
+    createChatEmbedding(response, user.id, 'MEMORIA_BOT');
 
     return response
 }
 
 export const createMessageEmbedding = async (message: ServerMessageType) => {
     const { content, userId, id, createdAt, tags } = message;
-    const tagNames = tags.map(tag => tag.tag.tagName).join(',');
-    const combined = `${content} \n Tags: ${tagNames} \n Date: ${createdAt}`
+    const tagNames = tags.length ? tags.map(tag => tag.tag.tagName).join(',') : '';
+    const combined = `${content} \n  ${tagNames.length ? `Tags: ${tagNames}` : ''} \n Date: ${createdAt}`
     const vector = await gptEmbedding(combined);
 
-    const jsonContent = JSON.stringify({ vector, combined, createdAt, id });
+    const jsonContent = JSON.stringify({ vector, content: combined, createdAt, id });
     await saveFile(`message_logs/${userId}/${id}.json`, jsonContent);
 
     return vector
 }
 
-const createChatEmbedding = async (message: string, from: string) => {
+export const deleteMessageEmbedding = (message: any) => {
+    const { userId, id } = message;
+    deleteFile(`message_logs/${userId}/${id}.json`);
+}
+
+const createChatEmbedding = async (message: string, userid: string, from: string) => {
     const vector = await gptEmbedding(message);
-    const jsonContent = JSON.stringify({ vector, message });
-    await saveFile(`chat_logs/${from}-${Date.now()}.json`, jsonContent);
+    const jsonContent = JSON.stringify({ vector, content: `${from}: ${message}`, createdAt: (new Date()).toISOString(), id: `${from}-${Date.now()}`});
+    await saveFile(`chat_logs/${userid}/${from}-${Date.now()}.json`, jsonContent);
 
     return vector
 }
@@ -57,7 +62,6 @@ export const createCompletion = async (prompt: string, user: User) => {
     const stop = [`${user.email}:`, 'MEMORIA_BOT:'];
     const result = await gptCompletion(prompt, stop);
 
-    // save to logs
     const filename = `${Date.now()}_gpt3.txt`;
     await saveFile(`gpt3_logs/${user.id}/${filename}`, `${prompt}\n\n==========\n\n${result}`);
 
@@ -110,6 +114,5 @@ export async function loadEmbeddings(path: string, limit?: number): Promise<Embe
         result.push(EmbeddingSchema.parse(content));
         if (limit && result.length >= limit) break;
     }
-    return result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
-
