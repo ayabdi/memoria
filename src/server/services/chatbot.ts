@@ -17,8 +17,8 @@ export type Embedding = z.infer<typeof EmbeddingSchema>;
 export const executePrompt = async (prompt: string, user: User) => {
     const promptVector = await createChatEmbedding(prompt, user.id, user.email ?? "YOU");
     const [conversations, messages] = await Promise.all([
-        loadEmbeddings(`chat_logs/${user.id}`, 20),
-        loadEmbeddings(`message_logs/${user.id}`, 20)
+        loadEmbeddings(`chat_logs/${user.id}`, 10),
+        loadEmbeddings(`message_logs/${user.id}`)
     ]);
     const memories = fetchMemories(promptVector, messages);
     const template = await openFile('prompt_template.txt');
@@ -98,7 +98,7 @@ export function fetchMemories(vector: number[], logs: Embedding[]): string[] {
         scores.push({ ...log, score });
     }
     const ordered = scores.sort((a, b) => b.score - a.score);
-    const top = ordered.filter((log) => log.score > 0.75);
+    const top = ordered.filter((log) => log.score > 0.74);
 
     if (top.length > 0) return top.map((l) => l.content);
     return ordered.slice(0, 10).map((l) => l.content);
@@ -106,7 +106,7 @@ export function fetchMemories(vector: number[], logs: Embedding[]): string[] {
 
 export async function loadEmbeddings(path: string, limit?: number): Promise<Embedding[]> {
     const data = await listFiles(path);
-    const jsonFiles = data.filter((obj) => obj.endsWith('.json'));
+    const jsonFiles = data.filter((obj) => obj.endsWith('.json')).reverse();
 
     const result = [];
     for (const file of jsonFiles) {

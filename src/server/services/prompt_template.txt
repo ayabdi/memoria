@@ -4,7 +4,7 @@ Here is some background knowledge about the user that may be helpful for the con
 <<MEMORIES>>
 
 
-The following are the most recent messages in the conversation:
+The following are the most recent messages in the conversation, please only respond to the most recent one:
 <<CONVERSATION>>
 
 
