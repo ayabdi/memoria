@@ -4,10 +4,10 @@ Here is some background knowledge about the user that may be helpful for the con
 <<MEMORIES>>
 
 
-The following are the most recent messages in the conversation, please only respond to the most recent one:
+The following are the most recent messages in the conversation, I will only respond to the most recent response:
 <<CONVERSATION>>
 
 
 
-I will now provide a short and precise response
+I will now provide a detailed answer
 MEMORIA_BOT:

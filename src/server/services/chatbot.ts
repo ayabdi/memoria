@@ -17,7 +17,7 @@ export type Embedding = z.infer<typeof EmbeddingSchema>;
 export const executePrompt = async (prompt: string, user: User) => {
     const promptVector = await createChatEmbedding(prompt, user.id, user.email ?? "YOU");
     const [conversations, messages] = await Promise.all([
-        loadEmbeddings(`chat_logs/${user.id}`, 10),
+        loadEmbeddings(`chat_logs/${user.id}`, 4),
         loadEmbeddings(`message_logs/${user.id}`)
     ]);
     const memories = fetchMemories(promptVector, messages);
