@@ -24,6 +24,7 @@ export const MessageSchema = z.object({
     content: z.string(),
     from: z.string(),
     type: z.string(),
+    vector: z.array(z.number()).optional(),
     userId: z.string().optional(),
     tags: z.array(TagSchema).optional(),
 });
@@ -34,7 +35,7 @@ export const EditMessageSchema = MessageSchema
 export const GetMessagesSchema = z.object({
     page: z.number().optional(),
     searchTerm: z.string().optional()
-}).optional()
+})
 
 export type TagSchema = z.infer<typeof TagSchema>;
 export type MessageSchema = z.infer<typeof MessageSchema>;
