@@ -111,6 +111,13 @@ export const getAllMesages = async (
         orderBy: {
             createdAt: "desc",
         },
+        include: {
+            tags: {
+                include: {
+                    tag: true,
+                },
+            },
+        }
     });
     return result;
 }

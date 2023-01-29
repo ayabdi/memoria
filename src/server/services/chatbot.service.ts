@@ -1,12 +1,12 @@
 import { gptCompletion, gptEmbedding } from "../lib/openai";
 import { CreateMessageSchema, ServerMessageType } from "@/types/messages.schema";
-import { Message, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "fs";
 import { User } from "next-auth";
 import { prisma } from "@/server/db/client";
 import path from "path";
 
-export const executePrompt = async (prompt: number[], messages: Message[], user: User) => {
+export const executePrompt = async (prompt: number[], messages: ServerMessageType[], user: User) => {
     const memories = selectMemories(prompt, messages)
     const conversations = await fetchConversations(user.id);
 
@@ -34,10 +34,10 @@ const fetchConversations = async (userId: string) => {
 }
 
 export const createMessageEmbedding = async (message: CreateMessageSchema) => {
-    const { content, createdAt, tags } = message;
-    const tagNames = tags?.length ? tags.map(tag => tag.tagName).join(',') : '';
-    const combined = `${content} \n  ${tagNames.length ? `Tags: ${tagNames}` : ''} \n Date: ${createdAt}`
-    const vector = await gptEmbedding(combined);
+    const { content, tags } = message;
+
+    const input = combined(content, new Date(), tags?.map(t => t.tagName));
+    const vector = await gptEmbedding(input)
 
     return vector
 }
@@ -74,7 +74,7 @@ export const loadChatLogs = async (prisma: PrismaClient, userId: string) => {
     });
 }
 
-export const selectMemories = (inputVector: number[], messages: Message[]): string[] => {
+export const selectMemories = (inputVector: number[], messages: ServerMessageType[]): string[] => {
     const scores = messages.map(message => {
         const score = similarity(message.vector, inputVector);
         return { ...message, score };
@@ -82,8 +82,8 @@ export const selectMemories = (inputVector: number[], messages: Message[]): stri
     const ordered = scores.sort((a, b) => b.score - a.score);
     const top = ordered.filter((log) => log.score > 0.74);
 
-    if (top.length > 0) return top.map((l) => l.content);
-    return ordered.slice(0, 10).map((l) => l.content);
+    if (top.length > 0) return top.map((l) => combined(l.content, l.createdAt, l.tags.map(t => t.tag.tagName)));
+    return ordered.slice(0, 10).map((l) => combined(l.content, l.createdAt, l.tags.map(t => t.tag.tagName)));
 }
 
 const similarity = (v1: number[], v2: number[]): number => {
@@ -94,4 +94,8 @@ const similarity = (v1: number[], v2: number[]): number => {
     const norm1 = Math.sqrt(v1.reduce((sum, value) => sum + value ** 2, 0));
     const norm2 = Math.sqrt(v2.reduce((sum, value) => sum + value ** 2, 0));
     return dotProduct / (norm1 * norm2);
+}
+
+const combined = (content: string,  createdAt: Date, tagNames?: string[]) => {
+    return `${content} \n  ${tagNames?.length ? `Tags: ${tagNames.join(', ')}` : ''} \n Date: ${createdAt}`
 }
