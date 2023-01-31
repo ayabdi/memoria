@@ -16,7 +16,7 @@ export const executePrompt = async (prompt: number[], messages: ServerMessageTyp
     const fullPrompt = template
         .replace('<<MEMORIES>>', memories.join('\n\n'))
         .replace('<<CONVERSATION>>', conversations)
-    console.log(fullPrompt)
+
     const response = await createCompletion(fullPrompt, user);
 
     return response
