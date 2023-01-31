@@ -38,7 +38,8 @@ export const messageRouter = router({
       const message = {
         content: response,
         type: 'regular',
-        from: 'Memoria Bot'
+        from: 'Memoria Bot',
+        tags: [{ tagName: 'Bot', color: 'rgba(54, 162, 235, 1)' }]
       }
 
       return await createMessage(message, user.id);
