@@ -32,14 +32,13 @@ export const messageRouter = router({
       // execute prompt
       const response = await executePrompt(promptVector, messages, user);
 
-      // create vector for response
-      const vector = await createChatEmbedding(response, 'MEMORIA_BOT', user.id);
+      // create vector for response, no need to store in messages table
+      await createChatEmbedding(response, 'MEMORIA_BOT', user.id);
 
       const message = {
         content: response,
         type: 'regular',
-        from: 'Memoria Bot',
-        vector
+        from: 'Memoria Bot'
       }
 
       return await createMessage(message, ctx.prisma, user.id);

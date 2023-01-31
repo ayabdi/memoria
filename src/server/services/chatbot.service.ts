@@ -15,15 +15,15 @@ export const executePrompt = async (prompt: number[], messages: ServerMessageTyp
 
     const fullPrompt = template
         .replace('<<MEMORIES>>', memories.join('\n\n'))
-        .replace('<<CONVERSATION>>', conversations.map(c => c.content).reverse().join('\n\n'))
-
+        .replace('<<CONVERSATION>>', conversations)
+    console.log(fullPrompt)
     const response = await createCompletion(fullPrompt, user);
 
     return response
 }
 
 const fetchConversations = async (userId: string) => {
-    return prisma.chatLogs.findMany({
+    const response = await prisma.chatLogs.findMany({
         where: {
             userId,
         },
@@ -31,6 +31,9 @@ const fetchConversations = async (userId: string) => {
             createdAt: 'asc',
         },
     });
+
+    const conversations = response.map(c => `${c.from}: ${c.content}`).join('\n\n')
+    return conversations
 }
 
 export const createMessageEmbedding = async (message: CreateMessageSchema) => {
@@ -46,7 +49,7 @@ export const createChatEmbedding = async (message: string, from: string, userId:
     const vector = await gptEmbedding(`${from}: ${message}`);
     await prisma.chatLogs.create({
         data: {
-            content: message,
+            content:  message,
             from,
             vector,
             userId
@@ -97,5 +100,5 @@ const similarity = (v1: number[], v2: number[]): number => {
 }
 
 const combined = (content: string,  createdAt: Date, tagNames?: string[]) => {
-    return `${content} \n  ${tagNames?.length ? `Tags: ${tagNames.join(', ')}` : ''} \n Date: ${createdAt}`
+    return `${content} ${tagNames?.length ? `- Tags: ${tagNames.join(', ')}` : ''} - Date: ${createdAt}`
 }
