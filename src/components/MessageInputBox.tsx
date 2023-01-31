@@ -20,6 +20,8 @@ import { useAtom } from "jotai";
 import { messageToEditAtom, tagsToFilterAtom } from "../store";
 import { trpc } from "@/utils/trpc";
 import { useSession } from "next-auth/react";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema | EditMessageSchema) => void;
@@ -183,7 +185,8 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         {/* add tag button */}
         <Popover>
           <Popover.Button>
-            <img className="inline h-6 cursor-pointer" src="/icons/tag.svg" />
+            <img id="tag" className="inline h-6 cursor-pointer" src="/icons/tag.svg" />
+            <Tooltip anchorId="tag" place="top" content="Add a tag"  className="rounded"/>
           </Popover.Button>
 
           <Popover.Panel className="relative z-10">

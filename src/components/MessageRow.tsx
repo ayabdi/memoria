@@ -5,6 +5,8 @@ import { Markdown } from "./Markdown";
 import { MessageSchema, TagSchema } from "@/types/messages.schema";
 import { messageToEditAtom } from "@/store";
 import { useAtom } from "jotai";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 
 interface MessageRowProps {
   message: MessageSchema;
@@ -15,13 +17,8 @@ interface MessageRowProps {
 }
 
 export const MessageRow = (props: MessageRowProps) => {
-  const {
-    message,
-    isLoadingMessage,
-    className,
-    onClickTag,
-    deleteMessage,
-  } = props;
+  const { message, isLoadingMessage, className, onClickTag, deleteMessage } =
+    props;
 
   const formattedDate = new Date(
     message.createdAt ?? new Date()
@@ -64,15 +61,19 @@ export const MessageRow = (props: MessageRowProps) => {
       onMouseLeave={() => setShowOptions(false)}
     >
       <div className="flex flex-row items-center">
-        {isYou ?
-            <Avatar
+        {isYou ? (
+          <Avatar
             name={message.from}
             size="48"
             className="mb-auto mt-1 rounded-md"
-          />:
-          <img src='/icons/chatbot.svg' className='mb-auto mt-1 rounded-md h-12 bg-blue-600 p-1.5' />
-      }
-    
+          />
+        ) : (
+          <img
+            src="/icons/chatbot.svg"
+            className="mb-auto mt-1 h-12 rounded-md bg-blue-600 p-1.5"
+          />
+        )}
+
         <div className="relative ml-4 w-full flex-col">
           <div className="flex max-h-[24px] w-full">
             <p className="font-semibold text-white">
@@ -84,15 +85,19 @@ export const MessageRow = (props: MessageRowProps) => {
             {showOptions && (
               <div className="h-50px z-100 relative right-0 ml-auto  h-max origin-bottom-right   rounded-md border-[0.3px] border-zinc-600 bg-[#36363B] py-1 text-zinc-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                 <img
+                  id="edit"
                   className="mx-1.5 inline h-5 cursor-pointer text-slate-600"
                   src="/icons/edit.svg"
-                  onClick={()=>setMessageToEdit(message)}
+                  onClick={() => setMessageToEdit(message)}
                 />
+                <Tooltip anchorId="edit" place="top" content="Edit" />
                 <img
+                  id="delete"
                   className="mr-1.5 inline h-5 cursor-pointer"
                   src="/icons/delete.svg"
                   onClick={deleteMessage}
                 />
+                <Tooltip anchorId="delete" place="top" content="Delete" />
               </div>
             )}
           </div>
