@@ -64,11 +64,15 @@ export const MessageRow = (props: MessageRowProps) => {
       onMouseLeave={() => setShowOptions(false)}
     >
       <div className="flex flex-row items-center">
-        <Avatar
-          name={message.from}
-          size="50"
-          className="mb-auto mt-1 rounded-md"
-        />
+        {isYou ?
+            <Avatar
+            name={message.from}
+            size="50"
+            className="mb-auto mt-1 rounded-md"
+          />:
+          <img src='/icons/chatbot.svg' className='mb-auto mt-1 rounded-md h-12 bg-blue-600 p-1.5' />
+      }
+    
         <div className="relative ml-4 w-full flex-col">
           <div className="flex max-h-[24px] w-full">
             <p className="font-semibold text-white">
