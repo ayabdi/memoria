@@ -14,7 +14,7 @@ export const messageRouter = router({
 
       const vector = input.type !== 'prompt' ? await createMessageEmbedding(input) : [];
 
-      return await createMessage({ ...input, vector }, ctx.prisma, userId);
+      return await createMessage({ ...input, vector }, userId);
     }),
   executePrompt: publicProcedure
     .input(z.object({ prompt: z.string() }))
@@ -24,7 +24,7 @@ export const messageRouter = router({
       if (!user) throw new Error('User not logged in');
 
       // get all all user messages
-      const messages = await getAllMesages(ctx.prisma, user.id);
+      const messages = await getAllMesages(user.id);
 
       // create embedding vector for prompt
       const promptVector = await createChatEmbedding(prompt, user.email ?? user.id, user.id);
@@ -41,7 +41,7 @@ export const messageRouter = router({
         from: 'Memoria Bot'
       }
 
-      return await createMessage(message, ctx.prisma, user.id);
+      return await createMessage(message, user.id);
     }),
 
   allMessages: publicProcedure
@@ -50,27 +50,27 @@ export const messageRouter = router({
       const userId = ctx.session?.user?.id || null;
       if (!userId) throw new Error('User not logged in');
 
-      return await getMessages(input, ctx.prisma, userId);
+      return await getMessages(input, userId);
     }),
 
   allTags: publicProcedure.query(async ({ ctx }) => {
     const userId = ctx.session?.user?.id || null;
     if (!userId) throw new Error('User not logged in');
 
-    return await getTags(ctx.prisma, userId)
+    return await getTags(userId)
   }),
 
   deleteMessage: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const userId = ctx.session?.user?.id || null;
     if (!userId) throw new Error('User not logged in');
 
-    return await deleteMessage(input, ctx.prisma, userId);
+    return await deleteMessage(input, userId);
   }),
 
   editMessage: publicProcedure.input(EditMessageSchema).mutation(async ({ ctx, input }) => {
     const userId = ctx.session?.user?.id || null;
     if (!userId) throw new Error('User not logged in');
 
-    return await editMessage(input, ctx.prisma, userId)
+    return await editMessage(input, userId)
   }),
 });

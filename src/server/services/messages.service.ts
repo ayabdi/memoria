@@ -1,9 +1,9 @@
 import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, ServerMessageType } from "@/types/messages.schema";
-import { PrismaClient } from "@prisma/client";
 import { extractAfterDate, extractBeforeDate, extractDuringDate, extractSearchTermFromSearchString as extractSearchTerm, extractTagsFromSearchTerm as extractTags } from "@/utils/common";
+import { prisma } from "@/server/db/client";
 
 export const createMessage = async (
-    message: CreateMessageSchema, prisma: PrismaClient, userId: string
+    message: CreateMessageSchema, userId: string
 ) => {
     const { content, type, from, tags, vector } = message;
     const tagsToAdd = tags?.map((tag) => {
@@ -33,7 +33,7 @@ export const createMessage = async (
 }
 
 export const getMessages = async (
-    query: GetMessagesSchema, prisma: PrismaClient, userId: string
+    query: GetMessagesSchema, userId: string
 ) => {
     const page = query?.page || 1;
     const take = 40;
@@ -102,7 +102,7 @@ export const getMessages = async (
 }
 
 export const getAllMesages = async (
-    prisma: PrismaClient, userId: string
+    userId: string
 ) => {
     const result = await prisma.message.findMany({
         where: {
@@ -124,7 +124,7 @@ export const getAllMesages = async (
 
 
 export const editMessage = async (
-    message: EditMessageSchema, prisma: PrismaClient, userId: string
+    message: EditMessageSchema, userId: string
 ) => {
     const tagsToAdd = message.tags?.map((tag) => {
         if (tag.id) return { tag: { connect: { id: tag.id } } };
@@ -160,7 +160,7 @@ export const editMessage = async (
 }
 
 export const deleteMessage = async (
-    messageId: string, prisma: PrismaClient, userId: string
+    messageId: string, userId: string
 ) => {
     // delete message - tag relations
     await prisma.tagsOnMessages.deleteMany({
