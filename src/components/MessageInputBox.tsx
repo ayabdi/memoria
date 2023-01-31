@@ -20,7 +20,6 @@ import { useAtom } from "jotai";
 import { messageToEditAtom, tagsToFilterAtom } from "../store";
 import { trpc } from "@/utils/trpc";
 import { useSession } from "next-auth/react";
-import { cleanMessage } from "@/utils/common";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema | EditMessageSchema) => void;

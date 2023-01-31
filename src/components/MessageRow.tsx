@@ -32,7 +32,28 @@ export const MessageRow = (props: MessageRowProps) => {
   const isYou = sessionData?.user?.name === message.from;
 
   const [showOptions, setShowOptions] = React.useState(false);
+  
+  const Text = () => {
+    let splitText = message.content.split(' ');
+    let content = splitText.map((part, index) => {
+        if (part.startsWith('@')) {
+            return (
+                <React.Fragment key={index}>
+                    <span className="rounded bg-zinc-500/30 py-0.5 px-1 text-indigo-300">{part}</span>
+                    {' '}
+                </React.Fragment>
+            );
+        } else {
+            return part + ' ';
+        }
+    });
 
+    return (
+        <div>
+            {content}
+        </div>
+    );
+}
   return (
     <div
       className={`justify-between py-4 px-6 hover:bg-zinc-700/20 ${className}`}
@@ -82,7 +103,7 @@ export const MessageRow = (props: MessageRowProps) => {
           {message.type === "markdown" ? (
             <Markdown source={message.content} style={{ color: isLoadingMessage ? "grey" : "white" }}/>
           ) : (
-            <p className={`${ isLoadingMessage ? "text-zinc-500" :"text-white"}`}>{message.content}</p>
+            <div className={`${ isLoadingMessage ? "text-zinc-500" :"text-white"}`}><Text/></div>
           )}
         </div>
       </div>
