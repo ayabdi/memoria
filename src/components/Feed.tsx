@@ -250,7 +250,6 @@ export const Feed = () => {
                 <MessageRow
                   message={message}
                   key={message.id + idx.toString()}
-                  setMessageToEdit={() => setMessageToEdit(message)}
                   deleteMessage={() => handleDelete(message.id!)}
                   onClickTag={onTagFilter}
                   className={idx === 0 ? "mt-auto" : ""}

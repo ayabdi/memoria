@@ -3,11 +3,12 @@ import React from "react";
 import Avatar from "react-avatar";
 import { Markdown } from "./Markdown";
 import { MessageSchema, TagSchema } from "@/types/messages.schema";
+import { messageToEditAtom } from "@/store";
+import { useAtom } from "jotai";
 
 interface MessageRowProps {
   message: MessageSchema;
   isLoadingMessage?: boolean;
-  setMessageToEdit?: () => void;
   deleteMessage?: () => void;
   onClickTag?: (tag: TagSchema) => void;
   className?: string;
@@ -19,7 +20,6 @@ export const MessageRow = (props: MessageRowProps) => {
     isLoadingMessage,
     className,
     onClickTag,
-    setMessageToEdit,
     deleteMessage,
   } = props;
 
@@ -33,6 +33,7 @@ export const MessageRow = (props: MessageRowProps) => {
   const isYou = sessionData?.user?.name === message.from;
 
   const [showOptions, setShowOptions] = React.useState(false);
+  const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
 
   const Text = () => {
     let splitText = message.content.split(" ");
@@ -81,7 +82,7 @@ export const MessageRow = (props: MessageRowProps) => {
                 <img
                   className="mx-1.5 inline h-5 cursor-pointer text-slate-600"
                   src="/icons/edit.svg"
-                  onClick={setMessageToEdit}
+                  onClick={()=>setMessageToEdit(message)}
                 />
                 <img
                   className="mr-1.5 inline h-5 cursor-pointer"
