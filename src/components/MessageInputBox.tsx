@@ -165,7 +165,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
     if (messageToEdit.type === "markdown") {
       setMdValue(messageToEdit.content);
-      console.log(messageToEdit)
+      console.log(messageToEdit);
       setInputMode("markdown");
     } else {
       setEditorState(
@@ -308,14 +308,14 @@ export const MessageInputBox = (props: MessageBoxProps) => {
               Cancel
             </button>
             <button
-              type="submit"
+              onClick={() => handleSubmit()}
               className="rounded bg-green-700 py-0.5 px-3 text-sm font-semibold text-white hover:bg-green-700/80"
             >
               Save
             </button>
           </div>
         ) : (
-          <button type="submit" className="self-end">
+          <button onClick={() => handleSubmit()} className="self-end">
             <img className="mr-2 h-7" src="/icons/send.svg" />
           </button>
         )}
