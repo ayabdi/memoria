@@ -20,7 +20,6 @@ import { useAtom } from "jotai";
 import { messageToEditAtom, tagsToFilterAtom } from "../store";
 import { trpc } from "@/utils/trpc";
 import { useSession } from "next-auth/react";
-import { cleanMessage } from "@/utils/common";
 
 interface MessageBoxProps {
   onSubmit: (message: CreateMessageSchema | EditMessageSchema) => void;
@@ -58,7 +57,8 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   ) => {
     if (inputMode === "markdown") return;
     const text = contentBlock.getText();
-    const regex = /\/chat/g;
+    // regex for any word starting with @
+    const regex = /@\w+/g;
     let matchArr, start;
 
     while ((matchArr = regex.exec(text)) !== null) {
@@ -66,7 +66,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
       setInputMode("prompt");
       callback(start, start + matchArr[0].length);
     }
-    if (!text.includes("/chat")) {
+    if (!text.includes("@chat")) {
       setInputMode("regular");
     }
   };
@@ -76,7 +76,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
       strategy,
       component: (props: any) => {
         return (
-          <span className="rounded bg-zinc-800 py-0.5 px-1 text-yellow-400">
+          <span className="rounded bg-zinc-500/30 py-0.5 px-1 text-indigo-300">
             {props.children}
           </span>
         );
@@ -103,7 +103,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         id: messageToEdit?.id,
         createdAt: messageToEdit?.createdAt,
       }),
-      content: inputMode === "markdown" ? mdValue : cleanMessage(editorText),
+      content: inputMode === "markdown" ? mdValue : editorText,
       type: inputMode,
       from: user?.name ?? user?.email ?? "Anonymous",
       tags: tags.map((tag) => {

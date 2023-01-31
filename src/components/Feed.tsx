@@ -89,10 +89,10 @@ export const Feed = () => {
     editMessage(message);
     setDisplayedMessages((prev) => {
       if (!prev) return prev;
-      const index = prev.findIndex((m) => m.id === message!.id);
+      const index = prev.findIndex((m) => m.id === message?.id);
       if (index === -1) return prev;
       const newMessages = [...prev];
-      newMessages[index] = message!;
+      newMessages[index] = message;
       return newMessages;
     });
   };
@@ -192,7 +192,7 @@ export const Feed = () => {
   useEffect(() => {
     if (pageNo > 1)
       refetch().then(({ data }) => {
-        if (data?.length) setDisplayedMessages((prev) => [...data, ...prev!]);
+        if (data?.length) setDisplayedMessages((prev) => [...data, ...prev || []]);
         else {
           setHasMoreMessages(false);
         }
@@ -250,7 +250,7 @@ export const Feed = () => {
                 <MessageRow
                   message={message}
                   key={message.id + idx.toString()}
-                  deleteMessage={() => handleDelete(message.id!)}
+                  deleteMessage={() => message.id && handleDelete(message.id)}
                   onClickTag={onTagFilter}
                   className={idx === 0 ? "mt-auto" : ""}
                 />
