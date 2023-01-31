@@ -67,7 +67,7 @@ export const MessageRow = (props: MessageRowProps) => {
         {isYou ?
             <Avatar
             name={message.from}
-            size="50"
+            size="48"
             className="mb-auto mt-1 rounded-md"
           />:
           <img src='/icons/chatbot.svg' className='mb-auto mt-1 rounded-md h-12 bg-blue-600 p-1.5' />
