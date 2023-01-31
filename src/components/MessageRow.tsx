@@ -36,8 +36,8 @@ export const MessageRow = (props: MessageRowProps) => {
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
 
   const Text = () => {
-    let splitText = message.content.split(" ");
-    let content = splitText.map((part, index) => {
+    const splitText = message.content.split(" ");
+    const content = splitText.map((part, index) => {
       if (part.startsWith("@")) {
         return (
           <React.Fragment key={index}>
