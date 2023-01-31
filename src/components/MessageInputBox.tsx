@@ -56,9 +56,11 @@ export const MessageInputBox = (props: MessageBoxProps) => {
     contentBlock: ContentBlock,
     callback: (start: number, end: number) => void
   ) => {
+    if (inputMode === "markdown") return;
     const text = contentBlock.getText();
     const regex = /\/chat/g;
     let matchArr, start;
+
     while ((matchArr = regex.exec(text)) !== null) {
       start = matchArr.index;
       setInputMode("prompt");
@@ -137,6 +139,10 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         tag.tagName.toLowerCase().includes(tagInput.toLowerCase())
       );
   };
+  const toggleInputMode = () => {
+    if (inputMode === "markdown") setInputMode("regular");
+    else setInputMode("markdown");
+  };
 
   // include filter tag in tags if not already included
   useEffect(() => {
@@ -159,6 +165,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
     if (messageToEdit.type === "markdown") {
       setMdValue(messageToEdit.content);
+      console.log(messageToEdit)
       setInputMode("markdown");
     } else {
       setEditorState(
@@ -249,7 +256,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         </div>
 
         <button
-          onClick={() => setInputMode("regular")}
+          onClick={() => toggleInputMode()}
           className={`ml-auto h-6 cursor-pointer rounded-xl border-[1.5px] px-2.5 text-sm text-zinc-200 shadow hover:bg-zinc-700 ${
             inputMode === "markdown"
               ? "border-green-700 bg-green-700/10"
@@ -265,7 +272,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         </button>
       </div>
       <div className="flex flex-col text-white">
-        {inputMode === "regular" || "prompt" ? (
+        {inputMode !== "markdown" ? (
           <div className="my-2 h-max max-h-[300px] min-h-[70px] px-0.5">
             <Editor
               editorState={editorState}
