@@ -16,7 +16,6 @@ export const executePrompt = async (prompt: number[], messages: ServerMessageTyp
     const fullPrompt = template
         .replace('<<MEMORIES>>', memories.join('\n\n'))
         .replace('<<CONVERSATION>>', conversations)
-
     const response = await createCompletion(fullPrompt, user);
 
     return response
@@ -100,5 +99,5 @@ const similarity = (v1: number[], v2: number[]): number => {
 }
 
 const combined = (content: string,  createdAt: Date, tagNames?: string[]) => {
-    return `${content} ${tagNames?.length ? `- Tags: ${tagNames.join(', ')}` : ''} - Date: ${createdAt}`
+    return `${content} ${tagNames?.length ? `\nTags: ${tagNames.join(', ')}` : ''} \nDate: ${createdAt}`
 }

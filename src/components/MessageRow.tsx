@@ -4,7 +4,6 @@ import Avatar from "react-avatar";
 import { Markdown } from "./Markdown";
 import { MessageSchema, TagSchema } from "@/types/messages.schema";
 
-
 interface MessageRowProps {
   message: MessageSchema;
   isLoadingMessage?: boolean;
@@ -24,7 +23,9 @@ export const MessageRow = (props: MessageRowProps) => {
     deleteMessage,
   } = props;
 
-  const formattedDate = new Date(message.createdAt ?? new Date()).toLocaleDateString("en-US", {
+  const formattedDate = new Date(
+    message.createdAt ?? new Date()
+  ).toLocaleDateString("en-US", {
     hour: "numeric",
     minute: "numeric",
   });
@@ -32,28 +33,29 @@ export const MessageRow = (props: MessageRowProps) => {
   const isYou = sessionData?.user?.name === message.from;
 
   const [showOptions, setShowOptions] = React.useState(false);
-  
+
   const Text = () => {
-    let splitText = message.content.split(' ');
+    let splitText = message.content.split(" ");
     let content = splitText.map((part, index) => {
-        if (part.startsWith('@')) {
-            return (
-                <React.Fragment key={index}>
-                    <span className="rounded bg-zinc-500/30 py-0.5 px-1 text-indigo-300">{part}</span>
-                    {' '}
-                </React.Fragment>
-            );
-        } else {
-            return part + ' ';
-        }
+      if (part.startsWith("@")) {
+        return (
+          <React.Fragment key={index}>
+            <span className="rounded bg-zinc-500/30 py-0.5 px-1 text-indigo-300">
+              {part}
+            </span>{" "}
+          </React.Fragment>
+        );
+      } else {
+        return part + " ";
+      }
     });
 
     return (
-        <div>
-            {content}
-        </div>
+      <div className={`${isLoadingMessage ? "text-zinc-500" : "text-white"}`}>
+        {content}
+      </div>
     );
-}
+  };
   return (
     <div
       className={`justify-between py-4 px-6 hover:bg-zinc-700/20 ${className}`}
@@ -61,7 +63,11 @@ export const MessageRow = (props: MessageRowProps) => {
       onMouseLeave={() => setShowOptions(false)}
     >
       <div className="flex flex-row items-center">
-        <Avatar name={message.from} size="50" className="mb-auto mt-1 rounded-md" />
+        <Avatar
+          name={message.from}
+          size="50"
+          className="mb-auto mt-1 rounded-md"
+        />
         <div className="relative ml-4 w-full flex-col">
           <div className="flex max-h-[24px] w-full">
             <p className="font-semibold text-white">
@@ -85,7 +91,7 @@ export const MessageRow = (props: MessageRowProps) => {
               </div>
             )}
           </div>
-          <div className="flex mb-1">
+          <div className="mb-1 flex">
             {message.tags?.map((tag) => (
               <div
                 key={tag.id}
@@ -101,9 +107,12 @@ export const MessageRow = (props: MessageRowProps) => {
             ))}
           </div>
           {message.type === "markdown" ? (
-            <Markdown source={message.content} style={{ color: isLoadingMessage ? "grey" : "white" }}/>
+            <Markdown
+              source={message.content}
+              style={{ color: isLoadingMessage ? "grey" : "white" }}
+            />
           ) : (
-            <div className={`${ isLoadingMessage ? "text-zinc-500" :"text-white"}`}><Text/></div>
+            <Text />
           )}
         </div>
       </div>
