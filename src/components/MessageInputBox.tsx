@@ -56,15 +56,18 @@ export const MessageInputBox = (props: MessageBoxProps) => {
     contentBlock: ContentBlock,
     callback: (start: number, end: number) => void
   ) => {
+    if (inputMode === "markdown") return;
     const text = contentBlock.getText();
-    const regex = /\/chat/g;
+    // regex for any word starting with @
+    const regex = /@\w+/g;
     let matchArr, start;
+
     while ((matchArr = regex.exec(text)) !== null) {
       start = matchArr.index;
       setInputMode("prompt");
       callback(start, start + matchArr[0].length);
     }
-    if (!text.includes("/chat")) {
+    if (!text.includes("@chat")) {
       setInputMode("regular");
     }
   };
@@ -74,7 +77,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
       strategy,
       component: (props: any) => {
         return (
-          <span className="rounded bg-zinc-800 py-0.5 px-1 text-yellow-400">
+          <span className="rounded bg-zinc-500/30 py-0.5 px-1 text-indigo-300">
             {props.children}
           </span>
         );
@@ -101,7 +104,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         id: messageToEdit?.id,
         createdAt: messageToEdit?.createdAt,
       }),
-      content: inputMode === "markdown" ? mdValue : cleanMessage(editorText),
+      content: inputMode === "markdown" ? mdValue : editorText,
       type: inputMode,
       from: user?.name ?? user?.email ?? "Anonymous",
       tags: tags.map((tag) => {
@@ -136,6 +139,10 @@ export const MessageInputBox = (props: MessageBoxProps) => {
       .filter((tag) =>
         tag.tagName.toLowerCase().includes(tagInput.toLowerCase())
       );
+  };
+  const toggleInputMode = () => {
+    if (inputMode === "markdown") setInputMode("regular");
+    else setInputMode("markdown");
   };
 
   // include filter tag in tags if not already included
@@ -249,7 +256,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         </div>
 
         <button
-          onClick={() => setInputMode("regular")}
+          onClick={() => toggleInputMode()}
           className={`ml-auto h-6 cursor-pointer rounded-xl border-[1.5px] px-2.5 text-sm text-zinc-200 shadow hover:bg-zinc-700 ${
             inputMode === "markdown"
               ? "border-green-700 bg-green-700/10"
@@ -265,7 +272,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         </button>
       </div>
       <div className="flex flex-col text-white">
-        {inputMode === "regular" || "prompt" ? (
+        {inputMode !== "markdown" ? (
           <div className="my-2 h-max max-h-[300px] min-h-[70px] px-0.5">
             <Editor
               editorState={editorState}
@@ -301,14 +308,14 @@ export const MessageInputBox = (props: MessageBoxProps) => {
               Cancel
             </button>
             <button
-              type="submit"
+              onClick={() => handleSubmit()}
               className="rounded bg-green-700 py-0.5 px-3 text-sm font-semibold text-white hover:bg-green-700/80"
             >
               Save
             </button>
           </div>
         ) : (
-          <button type="submit" className="self-end">
+          <button onClick={() => handleSubmit()} className="self-end">
             <img className="mr-2 h-7" src="/icons/send.svg" />
           </button>
         )}
