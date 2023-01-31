@@ -165,6 +165,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
     if (messageToEdit.type === "markdown") {
       setMdValue(messageToEdit.content);
+      console.log(messageToEdit);
       setInputMode("markdown");
     } else {
       setEditorState(
