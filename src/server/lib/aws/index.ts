@@ -3,8 +3,8 @@ import { env } from "../../../env/server.mjs";
 
 const s3 = new AWS.S3({
     credentials: {
-        accessKeyId: env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: env.AWS_SECRET_ACCESS_KEY
+        accessKeyId: env.AWS_ACCESSKEY_ID,
+        secretAccessKey: env.AWS_SECRET_ACCESSKEY
     }
 });
 
@@ -25,11 +25,23 @@ export const saveFile = async (filepath: string, content: any): Promise<void> =>
 }
 
 export const listFiles = async (prefix: string): Promise<string[]> => {
-    const params = { Bucket, Prefix: prefix };
-    const data = await s3.listObjectsV2(params).promise();
+    let resultKeys: string[] = [];
+    let continuationToken: string | undefined;
 
-    if (!data.Contents)
-        return [];
+    do {
+        const params = { Bucket, Prefix: prefix, MaxKeys: 1000, ContinuationToken: continuationToken };
+        const data = await s3.listObjectsV2(params).promise();
+        if (!data.Contents)
+            break;
 
-    return data.Contents.map((obj) => obj.Key || '');
+        resultKeys = resultKeys.concat(data.Contents.map((obj) => obj.Key || ''));
+        continuationToken = data.NextContinuationToken;
+    } while (continuationToken);
+
+    return resultKeys
+}
+
+export const deleteFile = async (filepath: string): Promise<void> => {
+    const params = { Bucket, Key: filepath };
+    await s3.deleteObject(params).promise();
 }

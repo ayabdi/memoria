@@ -19,7 +19,9 @@ import {
 
 export const Feed = () => {
   const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom);
-  const [displayedMessages, setDisplayedMessages] = useAtom(displayedMessagesAtom);
+  const [displayedMessages, setDisplayedMessages] = useAtom(
+    displayedMessagesAtom
+  );
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
   const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
   const [pageNo, setPageNo] = useState<number>(1);
@@ -54,17 +56,31 @@ export const Feed = () => {
   const { mutate } = trpc.message.createMessage.useMutation();
   const { mutate: editMessage } = trpc.message.editMessage.useMutation();
   const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
+  const { mutate: executePrompt } = trpc.message.executePrompt.useMutation();
 
   const createMessage = async (message: CreateMessageSchema) => {
     setUnsentMessages((prev) => [...prev, message]);
     setPageNo(1);
     mutate(message, {
-      onSuccess: () =>
+      onSuccess: () => {
+        if (message.type === "prompt")
+          executePrompt(
+            { prompt: message.content },
+            {
+              onSuccess: () => {
+                refetch().then(({ data }) => {
+                  if (data?.length) setDisplayedMessages(data);
+                });
+              },
+            }
+          );
+
         refetch().then(({ data }) => {
           if (data?.length) setDisplayedMessages(data);
           removeUnsentMessage(message);
           scrollToBottom();
-        }),
+        });
+      },
       onError: () => removeUnsentMessage(message),
     });
   };
@@ -192,7 +208,7 @@ export const Feed = () => {
 
   return (
     <>
-      <div className="mt-auto flex h-[calc(100vh_-_55px)] 2xl:w-1/2 w-full md:w-3/4  min-w-[370px] max-w-[800px] flex-col border-x border-slate-700 pb-5">
+      <div className="mt-auto flex h-[calc(100vh_-_55px)] w-full min-w-[370px] max-w-[800px]  flex-col border-x border-slate-700 pb-5 md:w-3/4 2xl:w-1/2">
         {tagsToFilter?.length || !!searchTerm ? (
           <div className="flex w-full px-4 py-4 text-lg text-white">
             <img

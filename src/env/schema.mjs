@@ -22,8 +22,8 @@ export const serverSchema = z.object({
   DISCORD_CLIENT_ID: z.string(),
   DISCORD_CLIENT_SECRET: z.string(),
   OPENAI_API_KEY: z.string(),
-  AWS_ACCESS_KEY_ID: z.string(),
-  AWS_SECRET_ACCESS_KEY: z.string()
+  AWS_ACCESSKEY_ID: z.string(),
+  AWS_SECRET_ACCESSKEY: z.string()
 });
 
 /**
