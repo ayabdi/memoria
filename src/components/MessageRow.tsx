@@ -20,12 +20,24 @@ export const MessageRow = (props: MessageRowProps) => {
   const { message, isLoadingMessage, className, onClickTag, deleteMessage } =
     props;
 
-  const formattedDate = new Date(
-    message.createdAt ?? new Date()
-  ).toLocaleDateString("en-US", {
-    hour: "numeric",
-    minute: "numeric",
-  });
+  const formatDate = (date: Date) => {
+    const formattedDate = new Date(date).toLocaleDateString("en-US", {
+      hour: "numeric",
+      minute: "numeric",
+    });
+    const today = new Date().toLocaleDateString("en-US");
+    const yesterday = new Date(
+      new Date().setDate(new Date().getDate() - 1)
+    ).toLocaleDateString("en-US");
+    if (formattedDate.startsWith(today)) {
+      return formattedDate.replace(today, "Today");
+    } else if (formattedDate.startsWith(yesterday)) {
+      return formattedDate.replace(yesterday, "Yesterday");
+    } else {
+      return formattedDate;
+    }
+  };
+
   const { data: sessionData } = useSession();
   const isYou = sessionData?.user?.name === message.from;
 
@@ -79,7 +91,7 @@ export const MessageRow = (props: MessageRowProps) => {
             <p className="font-semibold text-white">
               {isYou ? "You" : message.from}
               <span className="ml-1.5 text-xs text-slate-400">
-                {formattedDate}
+                {formatDate(message.createdAt ?? new Date())}
               </span>
             </p>
             {showOptions && (
