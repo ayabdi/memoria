@@ -174,7 +174,6 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
     if (messageToEdit.type === "markdown") {
       setMdValue(messageToEdit.content);
-      console.log(messageToEdit);
       setInputMode("markdown");
     } else {
       setEditorState(
@@ -298,10 +297,9 @@ export const MessageInputBox = (props: MessageBoxProps) => {
               onChange={handleEditorChange}
               placeholder="Jot down your thoughts..."
               handleReturn={(e) => {
-                // add new line on enter
-                setEditorState(RichUtils.insertSoftNewline(editorState));
-
-                if (e.shiftKey) handleSubmit();
+                // add new line on shift + enter
+                if (e.shiftKey) setEditorState(RichUtils.insertSoftNewline(editorState));
+                else handleSubmit();
                 return "handled";
               }}
             />
