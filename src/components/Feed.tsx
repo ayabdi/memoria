@@ -38,6 +38,7 @@ export const Feed = () => {
     refetch,
     isFetched,
     isFetching,
+    isLoading,
   } = trpc.message.allMessages.useQuery(
     {
       page: pageNo,
@@ -46,8 +47,12 @@ export const Feed = () => {
     {
       enabled: displayedMessages === null || searchTerm !== null,
       onSuccess: (data) => {
-        if (data?.length) setDisplayedMessages(data);
-        if (data?.length < 40) setHasMoreMessages(false);
+        if (!data.length) return;
+
+        if (pageNo <= 1) setDisplayedMessages(data);
+        else setDisplayedMessages((prev) => [...data, ...(prev ?? [])]);
+
+        if (data?.length < 10) setHasMoreMessages(false);
       },
     }
   );
@@ -166,8 +171,8 @@ export const Feed = () => {
     }, 10);
     setTimeout(() => {
       clearInterval(interval);
-    }, 2000);
-  }, [messages]);
+    }, 1000);
+  }, [displayedMessages]);
 
   // scroll to the bottom when new messages are added but not yet sent to the server
   useEffect(() => {
@@ -190,13 +195,8 @@ export const Feed = () => {
 
   // refetch when page number changes
   useEffect(() => {
-    if (pageNo > 1)
-      refetch().then(({ data }) => {
-        if (data?.length) setDisplayedMessages((prev) => [...data, ...prev || []]);
-        else {
-          setHasMoreMessages(false);
-        }
-      });
+    if (pageNo <= 1 || !hasMoreMessages) return;
+    refetch();
   }, [pageNo]);
 
   useEffect(() => {
@@ -225,6 +225,15 @@ export const Feed = () => {
           ref={chatContainerRef}
           className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
         >
+          <div className="py-3">
+            <MoonLoader
+              color="#fff"
+              size={20}
+              className="m-auto"
+              loading={isFetching && !!displayedMessages?.length}
+            />
+          </div>
+
           {displayedMessages?.map((message, idx) => (
             <div
               id={message.id}
