@@ -210,7 +210,7 @@ export const Feed = () => {
     <>
       <div className="mt-auto flex h-[calc(100vh_-_55px)] w-full min-w-[370px] max-w-[800px]  flex-col border-x border-slate-700 pb-5 md:w-3/4 2xl:w-1/2">
         {tagsToFilter?.length || !!searchTerm ? (
-          <div className="flex w-full px-4 py-4 text-lg text-white">
+          <div className="flex w-full px-4 pt-4 pb-1 text-lg text-white">
             <img
               src="/icons/left-arrow.svg"
               className="my-auto h-[18px] cursor-pointer pr-3 "
