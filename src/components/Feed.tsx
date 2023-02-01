@@ -52,7 +52,7 @@ export const Feed = () => {
         if (pageNo <= 1) setDisplayedMessages(data);
         else setDisplayedMessages((prev) => [...data, ...(prev ?? [])]);
 
-        if (data?.length < 10) setHasMoreMessages(false);
+        if (data?.length < 50) setHasMoreMessages(false);
       },
     }
   );

@@ -36,7 +36,7 @@ export const getMessages = async (
     query: GetMessagesSchema, userId: string
 ) => {
     const page = query?.page || 1;
-    const take = 10;
+    const take = 50;
     const skip = (page - 1) * take;
 
     const tagNames = extractTags(query?.searchTerm) || [];
