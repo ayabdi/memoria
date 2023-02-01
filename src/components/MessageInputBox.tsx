@@ -125,11 +125,18 @@ export const MessageInputBox = (props: MessageBoxProps) => {
     setTags([]);
   };
 
-  const submitTag = (
+  const addTag = (
     e: React.FormEvent<HTMLFormElement> | React.MouseEvent
   ) => {
     e.preventDefault();
-    setTags([...tags, { color: randomColor()!, tagName: tagInput }]);
+    const existingTag = allTags?.find(
+      (tag) => tag.tagName.toLowerCase() === tagInput.toLowerCase()
+    );
+    if (existingTag) {
+      setTags([...tags, existingTag]);
+    } else {
+      setTags([...tags, { color: randomColor()!, tagName: tagInput }]);
+    }
     setTagInput("");
   };
 
@@ -185,13 +192,22 @@ export const MessageInputBox = (props: MessageBoxProps) => {
         {/* add tag button */}
         <Popover>
           <Popover.Button>
-            <img id="tag" className="inline h-6 cursor-pointer" src="/icons/tag.svg" />
-            <Tooltip anchorId="tag" place="top" content="Add a tag"  className="rounded"/>
+            <img
+              id="tag"
+              className="inline h-6 cursor-pointer"
+              src="/icons/tag.svg"
+            />
+            <Tooltip
+              anchorId="tag"
+              place="top"
+              content="Add a tag"
+              className="rounded"
+            />
           </Popover.Button>
 
           <Popover.Panel className="relative z-10">
             <div className="absolute  -left-10 -top-[110px] z-10 my-2 min-h-[66px] w-80 origin-bottom-right rounded-md border-[0.5px] border-zinc-600 bg-[#36363B] text-zinc-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <form onSubmit={submitTag}>
+              <form onSubmit={addTag}>
                 <div className="flex h-6 flex-row p-4">
                   <input
                     className="h-9 w-full rounded-md border-[0.5px] border-zinc-600 bg-zinc-800 px-3 py-2 pb-3 outline-none"
@@ -203,7 +219,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
                   <img
                     className="ml-2 mt-0.5 inline h-7 cursor-pointer"
                     src="/icons/plus.svg"
-                    onClick={(e) => submitTag(e)}
+                    onClick={(e) => addTag(e)}
                   />
                 </div>
               </form>
