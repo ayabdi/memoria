@@ -29,13 +29,14 @@ export const MessageRow = (props: MessageRowProps) => {
     const yesterday = new Date(
       new Date().setDate(new Date().getDate() - 1)
     ).toLocaleDateString("en-US");
-    if (formattedDate.startsWith(today)) {
+
+    if (formattedDate.includes(today)) {
       return formattedDate.replace(today, "Today");
-    } else if (formattedDate.startsWith(yesterday)) {
-      return formattedDate.replace(yesterday, "Yesterday");
-    } else {
-      return formattedDate;
     }
+    if (formattedDate.includes(yesterday)) {
+      return formattedDate.replace(yesterday, "Yesterday");
+    }
+    return formattedDate;
   };
 
   const { data: sessionData } = useSession();
