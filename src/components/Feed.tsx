@@ -61,7 +61,7 @@ export const Feed = () => {
   const { mutate } = trpc.message.createMessage.useMutation();
   const { mutate: editMessage } = trpc.message.editMessage.useMutation();
   const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
-  const { mutate: executePrompt } = trpc.message.executePrompt.useMutation();
+  const { mutate: executePrompt, isLoading: isBotTyping } = trpc.message.executePrompt.useMutation();
 
   const createMessage = async (message: CreateMessageSchema) => {
     setUnsentMessages((prev) => [...prev, message]);
@@ -284,6 +284,7 @@ export const Feed = () => {
             ))}
         </div>
         <div className="flex-0 mt-4 px-6">
+           {isBotTyping && <p className="p-1 pt-0 text-sm text-slate-400">Memoria Bot is typing...</p>}
           <MessageInputBox mode="create" onSubmit={createMessage} />
         </div>
       </div>
