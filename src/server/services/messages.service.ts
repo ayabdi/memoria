@@ -8,9 +8,8 @@ export const createMessage = async (
 ) => {
     const { content, type, from, tags, vector } = message;
     const existingTags = await getTags(userId);
-    
+
     const tagsToAdd = tags?.map((tag) => {
-        if (tag.id) return { tag: { connect: { id: tag.id } } };
         const existingTag = existingTags.find(t => t.tagName === tag.tagName)
         if (existingTag) return { tag: { connect: { id: existingTag.id } } };
         return {
