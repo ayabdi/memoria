@@ -10,4 +10,4 @@ Simply jot down whatever you have in your head, add relevant tags, and hit send!
 <br>
 No need to spend your valuable time and energy having to organize stuff, simply filter your posts by tag, and voila!
     
-I'll be your personal smart assistant along the way, simply enter  **@chat**  in the message box below with anything you wish to ask me.`
+I'll be your personal smart assistant along the way, simply enter  **@chat**  in the message box below with anything you wish to ask me.
