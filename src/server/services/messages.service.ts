@@ -1,13 +1,18 @@
 import { CreateMessageSchema, EditMessageSchema, GetMessagesSchema, ServerMessageType } from "@/types/messages.schema";
 import { extractAfterDate, extractBeforeDate, extractDuringDate, extractSearchTermFromSearchString as extractSearchTerm, extractTagsFromSearchTerm as extractTags } from "@/utils/common";
 import { prisma } from "@/server/db/client";
+import { getTags } from "./tags.services";
 
 export const createMessage = async (
     message: CreateMessageSchema, userId: string
 ) => {
     const { content, type, from, tags, vector } = message;
+    const existingTags = await getTags(userId);
+    
     const tagsToAdd = tags?.map((tag) => {
         if (tag.id) return { tag: { connect: { id: tag.id } } };
+        const existingTag = existingTags.find(t => t.tagName === tag.tagName)
+        if (existingTag) return { tag: { connect: { id: existingTag.id } } };
         return {
             tag: { create: { tagName: tag.tagName, color: tag.color, userId } },
         };

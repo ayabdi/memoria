@@ -14,7 +14,7 @@ export const getTags = async (userId: string) => {
   });
 
   const uniqueTags = result.reduce((acc: Tag[], tag) => {
-    if (!acc.find((t) => t.id === tag.tag.id)) {
+    if (!acc.find((t) => t.tagName === tag.tag.tagName)) {
       acc.push(tag.tag);
     }
     return acc;
