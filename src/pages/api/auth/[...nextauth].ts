@@ -6,8 +6,10 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
 import { env } from "../../../env/server.mjs";
 import { prisma } from "../../../server/db/client";
-import { createMessage } from "@/server/services/messages.service.js";
-import { CreateMessageSchema } from "@/types/messages.schema.js";
+import { createMessage } from "@/server/services/messages.service";
+import { CreateMessageSchema } from "@/types/messages.schema";
+import { readFileSync } from "fs";
+import path from "path";
 
 export const authOptions: NextAuthOptions = {
   // Include user.id on session
@@ -34,19 +36,11 @@ export const authOptions: NextAuthOptions = {
   events: {
     createUser: async ({ user }) => {
       // Create a welcome message for the user
+      const introFile = path.join(process.cwd(), 'src', 'server', 'utils', 'intro_message.md')
+      const introMessage = readFileSync(introFile, 'utf8')
+
       const message: CreateMessageSchema = {
-        content: `### Welcome to Memoria!
-        ---
-        <img src="https://inspgr.id/app/uploads/2014/10/motion-radio-05.gif" width="200" height="200">
-        <br>
-        
-        Your simple to use 2nd brain 🧠🚀
-        
-        Simply jot down whatever you have in your head, add relevant tags, and hit send!
-        <br>
-        No need to spend your valuable time and energy having to organize stuff, simply filter your posts by tag, and voila!
-        
-        I'll be your personal smart assistant along the way, simply enter  **@chat**  in the message box below with anything you wish to ask me.`,
+        content: introMessage,
         type: "markdown",
         from: "Memoria Bot",
         tags: [{ tagName: "Bot", color: "rgba(54, 162, 235, 1)" }],
