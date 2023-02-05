@@ -10,7 +10,7 @@ export const executePrompt = async (prompt: number[], messages: ServerMessageTyp
     const memories = selectMemories(prompt, messages)
     const conversations = await fetchConversations(user.id);
 
-    const templateFile = path.join(process.cwd(), 'src', 'server', 'utils', 'prompt_template.txt')
+    const templateFile = path.join(process.cwd(), 'src', 'server', 'misc', 'prompt_template.txt')
     const template = readFileSync(templateFile, 'utf8')
 
     const fullPrompt = template

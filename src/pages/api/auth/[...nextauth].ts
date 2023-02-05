@@ -36,7 +36,7 @@ export const authOptions: NextAuthOptions = {
   events: {
     createUser: async ({ user }) => {
       // Create a welcome message for the user
-      const introFile = path.join(process.cwd(), 'src', 'server', 'utils', 'intro_message.md')
+      const introFile = path.join(process.cwd(), 'src', 'server', 'misc', 'intro_message.md')
       const introMessage = readFileSync(introFile, 'utf8')
 
       const message: CreateMessageSchema = {
