@@ -72,7 +72,7 @@ export const messageRouter = router({
     if (!userId) throw new Error("User not logged in");
     
     await deleteVector(input.id, input.type)
-    return await deleteMessage(input.id, userId);
+    return await deleteMessage(input.id);
   }),
 
   editMessage: publicProcedure.input(EditMessageSchema).mutation(async ({ ctx, input }) => {

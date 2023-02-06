@@ -75,7 +75,6 @@ export const searchVectors = async (
 };
 
 export const deleteVector = async (ids: string, namespace: string) => {
-    console.log(ids, namespace)
   const response = await pinecone
     .delete(`vectors/delete?namespace=${namespace}&ids=${ids}`)
     .json()

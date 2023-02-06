@@ -18,7 +18,15 @@ export const executePrompt = async (prompt: number[], user: User) => {
     .map((m) => combined(formatConversation(m.metadata), m.metadata.createdAt))
     .join("\n\n");
 
-  const templateFile = path.join(process.cwd(), "src", "server", "misc", "prompt_template.txt");
+  const templateFile = path.join(
+    process.cwd(),
+    "src",
+    "server",
+    "lib",
+    "openai",
+    "templates",
+    "prompt_template.txt"
+  );
   const template = readFileSync(templateFile, "utf8");
 
   const fullPrompt = template

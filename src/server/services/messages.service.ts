@@ -164,7 +164,7 @@ export const editMessage = async (
 }
 
 export const deleteMessage = async (
-    messageId: string, userId: string
+    messageId: string
 ) => {
     // delete message - tag relations
     await prisma.tagsOnMessages.deleteMany({
