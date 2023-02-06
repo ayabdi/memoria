@@ -23,10 +23,15 @@
 
 
 <!-- ABOUT THE PROJECT -->
-## About The Project
+## About The Project!
+
+<img width="638" src="[https://user-images.githubusercontent.com/46926470/116741071-86020a00-a9fe-11eb-9444-1959f0ed969e.png](https://user-images.githubusercontent.com/46926470/216974783-1e9d5080-0e59-4300-8cda-698be7387436.png)">
+
 I'm developing a chat-inspired app for easy and efficient task management and journaling of my daily thoughts and activities. With the ability to categorize each entry through assigning tags, this app aims to overcome the limitations of traditional note-taking apps.
 
-In addition, I envision the app to include a personal assistant powered by GPT to retain long-term memories of my entries and conversations. Excited to see how this idea materializes.
+In addition, the app includes a personal assistant powered by GPT to retain long-term memories of my entries and conversations using principles from [Natural Language Cognitive Architecture](https://github.com/daveshap/NaturalLanguageCognitiveArchitecture) by the brilliant [David Shapiro](https://www.davidkshapiro.com). 
+
+Excited to see how this idea materializes.
 
 
 ### Built With
@@ -40,7 +45,6 @@ In addition, I envision the app to include a personal assistant powered by GPT t
 
 <!-- GETTING STARTED -->
 ## Getting Started
-
 
 ### Installation
 
