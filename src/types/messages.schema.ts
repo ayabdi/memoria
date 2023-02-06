@@ -36,9 +36,13 @@ export const GetMessagesSchema = z.object({
     page: z.number().optional(),
     searchTerm: z.string().optional()
 })
-
+export const DeleteMessageSchema = z.object({
+    id: z.string(),
+    type: z.enum(["message", "conversation"])
+})
 export type TagSchema = z.infer<typeof TagSchema>;
 export type MessageSchema = z.infer<typeof MessageSchema>;
 export type EditMessageSchema = z.infer<typeof EditMessageSchema>;
 export type GetMessagesSchema = z.infer<typeof GetMessagesSchema>;
 export type CreateMessageSchema = z.infer<typeof CreateMessageSchema>;
+export type DeleteMessageSchema = z.infer<typeof DeleteMessageSchema>;
