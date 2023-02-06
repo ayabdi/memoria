@@ -42,12 +42,6 @@ In addition, I envision the app to include a personal assistant powered by GPT t
 ## Getting Started
 
 
-### Prerequisites
-
-* npm
-  ```sh
-  npm install npm@latest -g
-  ```
 ### Installation
 
   1. Clone the repo
@@ -59,7 +53,9 @@ In addition, I envision the app to include a personal assistant powered by GPT t
       npm install
       ```
    
-   ## Usage
+## Usage
+   npm run dev
+ 
    Link to Web app https://memoria-alpha.vercel.app
    
    ## License
