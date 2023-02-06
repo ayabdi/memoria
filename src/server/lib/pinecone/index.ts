@@ -56,7 +56,7 @@ export const saveVector = async (
 export const searchVectors = async (
   values: number[],
   namespace: "conversation" | "message",
-  limit: number = 10,
+  limit: number,
   filter?: PineconeVectorSearchFilter
 ) => {
   const body: PineconeVectorSearch = {
