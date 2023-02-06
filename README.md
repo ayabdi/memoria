@@ -24,9 +24,9 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-I'm developing a chat-inspired app for easy and efficient journaling of my daily thoughts and activities. With the ability to categorize each entry through assigning tags, this app aims to overcome the limitations of traditional note-taking apps.
+I'm developing a chat-inspired app for easy and efficient task management and journaling of my daily thoughts and activities. With the ability to categorize each entry through assigning tags, this app aims to overcome the limitations of traditional note-taking apps.
 
-In addition, I envision the app to include a personal assistant powered by GPT to retain long-term memories of my journal entries and conversations. Excited to see how this idea materializes.
+In addition, I envision the app to include a personal assistant powered by GPT to retain long-term memories of my entries and conversations. Excited to see how this idea materializes.
 
 
 ### Built With
