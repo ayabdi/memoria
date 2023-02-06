@@ -12,7 +12,6 @@
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
@@ -25,7 +24,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project!
 
-<img width="638" src="[https://user-images.githubusercontent.com/46926470/116741071-86020a00-a9fe-11eb-9444-1959f0ed969e.png](https://user-images.githubusercontent.com/46926470/216974783-1e9d5080-0e59-4300-8cda-698be7387436.png)">
+<img height="500" src="https://user-images.githubusercontent.com/46926470/216976437-7faa9b89-e604-437e-95d5-1754e8f1a549.png">
 
 I'm developing a chat-inspired app for easy and efficient task management and journaling of my daily thoughts and activities. With the ability to categorize each entry through assigning tags, this app aims to overcome the limitations of traditional note-taking apps.
 
