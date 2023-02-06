@@ -54,8 +54,10 @@ In addition, I envision the app to include a personal assistant powered by GPT t
       ```
    
 ## Usage
+   Run locally
+   ```sh
    npm run dev
- 
+   ```
    Link to Web app https://memoria-alpha.vercel.app
    
    ## License
