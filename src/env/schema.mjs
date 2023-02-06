@@ -25,7 +25,8 @@ export const serverSchema = z.object({
   AWS_ACCESSKEY_ID: z.string(),
   AWS_SECRET_ACCESSKEY: z.string(),
   GOOGLE_CLIENT_ID: z.string(),
-  GOOGLE_CLIENT_SECRET: z.string()
+  GOOGLE_CLIENT_SECRET: z.string(),
+  PINECONE_API_KEY: z.string()
 });
 
 /**
