@@ -27,7 +27,7 @@ export const messageRouter = router({
       const messages = await getAllMesages(user.id);
 
       // create embedding vector for prompt
-      const promptVector = await createChatEmbedding(prompt, user.email ?? user.id, user.id);
+      const promptVector = await createChatEmbedding(prompt.replace("@chat", ""), user.email ?? user.id, user.id);
 
       // execute prompt
       const response = await executePrompt(promptVector, messages, user);
@@ -50,7 +50,7 @@ export const messageRouter = router({
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id || null;
       if (!userId) throw new Error('User not logged in');
-
+      
       return await getMessages(input, userId);
     }),
 

@@ -8,7 +8,7 @@ import path from "path";
 
 export const executePrompt = async (prompt: number[], messages: ServerMessageType[], user: User) => {
     const memories = selectMemories(prompt, messages)
-    const conversations = await fetchConversations(user.id);
+    const conversations = await fetchConversations(user.id, 10);
 
     const templateFile = path.join(process.cwd(), 'src', 'server', 'misc', 'prompt_template.txt')
     const template = readFileSync(templateFile, 'utf8')
@@ -16,22 +16,24 @@ export const executePrompt = async (prompt: number[], messages: ServerMessageTyp
     const fullPrompt = template
         .replace('<<MEMORIES>>', memories.join('\n\n'))
         .replace('<<CONVERSATION>>', conversations)
+
     const response = await createCompletion(fullPrompt, user);
 
     return response
 }
 
-const fetchConversations = async (userId: string) => {
+const fetchConversations = async (userId: string, limit: number) => {
     const response = await prisma.chatLogs.findMany({
         where: {
             userId,
         },
         orderBy: {
-            createdAt: 'asc',
+            createdAt: 'desc',
         },
+        take: limit,
     });
 
-    const conversations = response.map(c => `${c.from}: ${c.content}`).join('\n\n')
+    const conversations = response.reverse().map(c => `${c.from}: ${c.content.replace("@chat", "")}`).join('\n\n')
     return conversations
 }
 
