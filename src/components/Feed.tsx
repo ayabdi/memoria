@@ -102,10 +102,7 @@ export const Feed = () => {
   };
   const handleDelete = (message: MessageSchema) => {
     if (!message.id) return;
-
-    // determine if the message is a conversation with the bot or a regular message
-    const isConversation = ![user?.name, user?.email].includes(message.from) || message.type === "prompt";
-    deleteMessage({ id: message.id, type: isConversation ? "conversation" : "message" });
+    deleteMessage(message);
 
     setDisplayedMessages((prev) => {
       if (!prev) return prev;
@@ -268,7 +265,7 @@ export const Feed = () => {
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
               <MessageRow
-                message={message}
+                message={{...message, id: idx.toString()}}
                 isLoadingMessage={true}
                 onClickTag={onTagFilter}
                 key={idx}

@@ -68,10 +68,12 @@ export const messageRouter = router({
   }),
 
   deleteMessage: publicProcedure.input(DeleteMessageSchema).mutation(async ({ ctx, input }) => {
-    const userId = ctx.session?.user?.id || null;
-    if (!userId) throw new Error("User not logged in");
+    const user = ctx.session?.user || null;
+    if (!user?.id) throw new Error("User not logged in");
     
-    await deleteVector(input.id, input.type)
+    const isConversation = ![user?.name, user?.email].includes(input.from) || input.type === "prompt";
+    await deleteVector(input.id, isConversation ? "conversation" : "regular");
+    
     return await deleteMessage(input.id);
   }),
 

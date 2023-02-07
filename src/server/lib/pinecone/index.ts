@@ -28,7 +28,7 @@ const catchError = (e: any) => {
 export const saveVector = async (
   message: ServerMessageType,
   values: number[],
-  namespace: "conversation" | "message"
+  namespace: "conversation" | "regular"
 ) => {
   const body: PineconeSaveVector = {
     namespace,
@@ -55,7 +55,7 @@ export const saveVector = async (
 
 export const searchVectors = async (
   values: number[],
-  namespace: "conversation" | "message",
+  namespace: "conversation" | "regular",
   limit: number,
   filter?: PineconeVectorSearchFilter
 ) => {
