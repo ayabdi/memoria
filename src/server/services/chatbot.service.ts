@@ -11,7 +11,7 @@ export const executePrompt = async (prompt: number[], user: User) => {
   const messagesVectors = await searchVectors(prompt, "memories", 10);
 
   const memories = messagesVectors.matches
-    .filter((m) => m.score > 0.74)
+    .filter((m) => m.score > 0.70)
     .map((m, i) => {
       const count = i + 1;
       return `${count}. ${combined(m.metadata.content, m.metadata.createdAt, m.metadata.tags)}`;
