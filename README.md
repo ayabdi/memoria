@@ -30,7 +30,7 @@ I'm developing a chat-inspired app for easy and efficient task management and jo
 
 In addition, the app includes a personal assistant powered by GPT to retain long-term memories of my entries and conversations using principles from [Natural Language Cognitive Architecture](https://github.com/daveshap/NaturalLanguageCognitiveArchitecture) by the brilliant [David Shapiro](https://www.davidkshapiro.com). 
 
-Excited to see how this idea materializes.
+Excited to see how this experiment materializes.
 
 
 ### Built With
@@ -41,6 +41,8 @@ Excited to see how this idea materializes.
 * Prisma
 * NextAuth.js
 * GPT-3
+* Pinecone - (Vector Db for semantic search)
+* PostgreSQL
 
 <!-- GETTING STARTED -->
 ## Getting Started
