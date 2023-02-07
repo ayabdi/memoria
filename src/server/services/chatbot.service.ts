@@ -1,105 +1,98 @@
 import { gptCompletion, gptEmbedding } from "../lib/openai";
-import { CreateMessageSchema, ServerMessageType } from "@/types/messages.schema";
-import { PrismaClient } from "@prisma/client";
+import { MessageSchema, ServerMessageType } from "@/types/messages.schema";
 import { readFileSync } from "fs";
 import { User } from "next-auth";
 import { prisma } from "@/server/db/client";
 import path from "path";
+import { saveVector, searchVectors } from "../lib/pinecone";
+import { PineconeMetadata } from "../lib/pinecone/schema";
 
-export const executePrompt = async (prompt: number[], messages: ServerMessageType[], user: User) => {
-    const memories = selectMemories(prompt, messages)
-    const conversations = await fetchConversations(user.id, 10);
+export const executePrompt = async (prompt: number[], user: User) => {
+  const messagesVectors = await searchVectors(prompt, "memories", 10);
 
-    const templateFile = path.join(process.cwd(), 'src', 'server', 'misc', 'prompt_template.txt')
-    const template = readFileSync(templateFile, 'utf8')
+  const memories = messagesVectors.matches
+    .filter((m) => m.score > 0.74)
+    .map((m, i) => {
+      const count = i + 1;
+      return `${count}. ${combined(m.metadata.content, m.metadata.createdAt, m.metadata.tags)}`;
+    })
+    .join("\n\n");
 
-    const fullPrompt = template
-        .replace('<<MEMORIES>>', memories.join('\n\n'))
-        .replace('<<CONVERSATION>>', conversations)
+  const conversations = await getChatLogs(user.id, 10);
 
-    const response = await createCompletion(fullPrompt, user);
+  const templateFile = path.join(
+    process.cwd(),
+    "src",
+    "server",
+    "templates",
+    "prompt_template.txt"
+  );
+  const template = readFileSync(templateFile, "utf8");
 
-    return response
-}
+  const fullPrompt = template
+    .replace("<<MEMORIES>>", memories)
+    .replace("<<CONVERSATION>>", conversations);
 
-const fetchConversations = async (userId: string, limit: number) => {
-    const response = await prisma.chatLogs.findMany({
-        where: {
-            userId,
-        },
-        orderBy: {
-            createdAt: 'desc',
-        },
-        take: limit,
-    });
+  const response = await createCompletion(fullPrompt, user);
 
-    const conversations = response.reverse().map(c => `${c.from}: ${c.content.replace("@chat", "")}`).join('\n\n')
-    return conversations
-}
+  return response;
+};
 
-export const createMessageEmbedding = async (message: CreateMessageSchema) => {
-    const { content, tags } = message;
+export const createMessageEmbedding = async (message: MessageSchema, namespace: "memories") => {
+  const { content, tags } = message;
 
-    const input = combined(content, new Date(), tags?.map(t => t.tagName));
-    const vector = await gptEmbedding(input)
+  const vector = await gptEmbedding(`${content} \n Tags: ${tags?.map((t) => t.tagName).join(" ")}`);
 
-    return vector
-}
+  const metadata: PineconeMetadata = {
+    from: message.from,
+    type: message.type,
+    userId: message.userId,
+    content,
+    createdAt: new Date().toISOString(),
+    tags: tags?.map((t) => t.tagName),
+  };
 
-export const createChatEmbedding = async (message: string, from: string, userId: string) => {
-    const vector = await gptEmbedding(`${from}: ${message}`);
-    await prisma.chatLogs.create({
-        data: {
-            content:  message,
-            from,
-            vector,
-            userId
-        },
-    });
+  await saveVector(message.id, metadata, vector, namespace);
 
-    return vector
-}
+  return vector;
+};
 
 export const createCompletion = async (prompt: string, user: User) => {
-    const stop = [`${user.email}:`, 'MEMORIA_BOT:'];
-    const result = await gptCompletion(prompt, stop);
+  const stop = [`${user.name ?? user.email}:`, "Memoria Bot:"];
+  const result = await gptCompletion(prompt, stop);
 
-    return result;
-}
+  return result;
+};
 
-export const loadChatLogs = async (prisma: PrismaClient, userId: string) => {
-    return prisma.chatLogs.findMany({
-        where: {
-            userId,
-        },
-        orderBy: {
-            createdAt: 'desc',
-        },
-    });
-}
+export const createChatLog = async (message: string, userId: string, from: string) => {
+  return await prisma.chatLogs.create({
+    data: {
+      content: message,
+      from: from,
+      userId,
+    },
+  });
+};
 
-export const selectMemories = (inputVector: number[], messages: ServerMessageType[]): string[] => {
-    const scores = messages.map(message => {
-        const score = similarity(message.vector, inputVector);
-        return { ...message, score };
-    });
-    const ordered = scores.sort((a, b) => b.score - a.score);
-    const top = ordered.filter((log) => log.score > 0.74);
+export const getChatLogs = async (userId: string, limit: number) => {
+  const response = await prisma.chatLogs.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: limit,
+  });
 
-    if (top.length > 0) return top.map((l) => combined(l.content, l.createdAt, l.tags.map(t => t.tag.tagName)));
-    return ordered.slice(0, 10).map((l) => combined(l.content, l.createdAt, l.tags.map(t => t.tag.tagName)));
-}
+  return response
+    .map((r) => `${r.from}: ${r.content}`)
+    .reverse()
+    .join("\n\n");
+};
 
-const similarity = (v1: number[], v2: number[]): number => {
-    let dotProduct = 0;
-    for (let i = 0; i < v1.length; i++) {
-        dotProduct += (v1[i] || 0) * (v2[i] || 0);
-    }
-    const norm1 = Math.sqrt(v1.reduce((sum, value) => sum + value ** 2, 0));
-    const norm2 = Math.sqrt(v2.reduce((sum, value) => sum + value ** 2, 0));
-    return dotProduct / (norm1 * norm2);
-}
-
-const combined = (content: string,  createdAt: Date, tagNames?: string[]) => {
-    return `${content} ${tagNames?.length ? `\nTags: ${tagNames.join(', ')}` : ''} \nDate: ${createdAt}`
-}
+const combined = (content: string, createdAt: string, tagNames?: string[]) => {
+  return `${content} ${
+    tagNames?.length ? `\nTags: ${tagNames.join(", ")}` : ""
+  } \nDate: ${createdAt}`;
+};

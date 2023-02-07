@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   CreateMessageSchema,
   EditMessageSchema,
+  MessageSchema,
   TagSchema,
 } from "@/types/messages.schema";
 import { MoonLoader } from "react-spinners";
@@ -16,21 +17,19 @@ import {
   searchTermAtom,
   tagsToFilterAtom,
 } from "../store";
+import { useSession } from "next-auth/react";
 
 export const Feed = () => {
+  const user = useSession().data?.user;
   const [tagsToFilter, setTagsToFilter] = useAtom(tagsToFilterAtom);
-  const [displayedMessages, setDisplayedMessages] = useAtom(
-    displayedMessagesAtom
-  );
+  const [displayedMessages, setDisplayedMessages] = useAtom(displayedMessagesAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
   const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
   const [pageNo, setPageNo] = useState<number>(1);
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
 
   // to display messages that are not yet sent to the server (optimistic UI)
-  const [unsentMessages, setUnsentMessages] = useState<CreateMessageSchema[]>(
-    []
-  );
+  const [unsentMessages, setUnsentMessages] = useState<CreateMessageSchema[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -38,7 +37,6 @@ export const Feed = () => {
     refetch,
     isFetched,
     isFetching,
-    isLoading,
   } = trpc.message.allMessages.useQuery(
     {
       page: pageNo,
@@ -61,27 +59,25 @@ export const Feed = () => {
   const { mutate } = trpc.message.createMessage.useMutation();
   const { mutate: editMessage } = trpc.message.editMessage.useMutation();
   const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
-  const { mutate: executePrompt, isLoading: isBotTyping } = trpc.message.executePrompt.useMutation();
+  const { mutate: executePrompt, isLoading: isBotTyping } =
+    trpc.message.executePrompt.useMutation();
 
   const createMessage = async (message: CreateMessageSchema) => {
     setUnsentMessages((prev) => [...prev, message]);
     setPageNo(1);
     mutate(message, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         if (message.type === "prompt")
           executePrompt(
-            { prompt: message.content },
+            data,
             {
               onSuccess: () => {
-                refetch().then(({ data }) => {
-                  if (data?.length) setDisplayedMessages(data);
-                });
+                refetch()
               },
             }
           );
 
         refetch().then(({ data }) => {
-          if (data?.length) setDisplayedMessages(data);
           removeUnsentMessage(message);
           scrollToBottom();
         });
@@ -101,11 +97,13 @@ export const Feed = () => {
       return newMessages;
     });
   };
-  const handleDelete = (id: string) => {
-    deleteMessage(id);
+  const handleDelete = (message: MessageSchema) => {
+    if (!message.id) return;
+    deleteMessage(message);
+
     setDisplayedMessages((prev) => {
       if (!prev) return prev;
-      const index = prev.findIndex((m) => m.id === id);
+      const index = prev.findIndex((m) => m.id === message.id);
       if (index === -1) return prev;
       const newMessages = [...prev];
       newMessages.splice(index, 1);
@@ -123,16 +121,13 @@ export const Feed = () => {
 
   const scrollToLastMessage = () => {
     if (!messages?.length) return;
-    const lastMessage = document.getElementById(
-      messages[messages.length - 1]?.id || ""
-    );
+    const lastMessage = document.getElementById(messages[messages.length - 1]?.id || "");
     if (lastMessage) lastMessage.scrollIntoView();
   };
 
   const scrollToBottom = () => {
     const scroll =
-      (chatContainerRef.current?.scrollHeight || 0) -
-      (chatContainerRef.current?.clientHeight || 0);
+      (chatContainerRef.current?.scrollHeight || 0) - (chatContainerRef.current?.clientHeight || 0);
     chatContainerRef.current?.scrollTo(0, scroll);
   };
 
@@ -172,7 +167,7 @@ export const Feed = () => {
     setTimeout(() => {
       clearInterval(interval);
     }, 1000);
-  }, [displayedMessages]);
+  }, [messages]);
 
   // scroll to the bottom when new messages are added but not yet sent to the server
   useEffect(() => {
@@ -235,18 +230,10 @@ export const Feed = () => {
           </div>
 
           {displayedMessages?.map((message, idx) => (
-            <div
-              id={message.id}
-              key={idx}
-              className={idx === 0 ? "mt-auto " : ""}
-            >
+            <div id={message.id} key={idx} className={idx === 0 ? "mt-auto " : ""}>
               {messageToEdit && messageToEdit.id === message.id ? (
                 <div className="flex px-6">
-                  <Avatar
-                    name={message.from}
-                    size="50"
-                    className="mb-auto mt-1 mr-4 rounded-md"
-                  />
+                  <Avatar name={message.from} size="50" className="mb-auto mt-1 mr-4 rounded-md" />
                   <MessageInputBox
                     onSubmit={(m: CreateMessageSchema | EditMessageSchema) => {
                       handleEdit(m as EditMessageSchema);
@@ -259,7 +246,7 @@ export const Feed = () => {
                 <MessageRow
                   message={message}
                   key={message.id + idx.toString()}
-                  deleteMessage={() => message.id && handleDelete(message.id)}
+                  deleteMessage={() => handleDelete(message)}
                   onClickTag={onTagFilter}
                   className={idx === 0 ? "mt-auto" : ""}
                 />
@@ -275,7 +262,7 @@ export const Feed = () => {
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
               <MessageRow
-                message={message}
+                message={{...message, id: idx.toString()}}
                 isLoadingMessage={true}
                 onClickTag={onTagFilter}
                 key={idx}
@@ -284,7 +271,9 @@ export const Feed = () => {
             ))}
         </div>
         <div className="flex-0 mt-4 px-6">
-           {isBotTyping && <p className="p-1 pt-0 text-sm text-slate-400">Memoria Bot is typing...</p>}
+          {isBotTyping && (
+            <p className="p-1 pt-0 text-sm text-slate-400">Memoria Bot is typing...</p>
+          )}
           <MessageInputBox mode="create" onSubmit={createMessage} />
         </div>
       </div>
