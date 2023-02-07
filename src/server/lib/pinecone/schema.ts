@@ -4,16 +4,15 @@ export const PineconeMetadataSchema = z.object({
   content: z.string(),
   type: z.string(),
   from: z.string(),
-  userId: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  tags: z.array(z.string()),
+  userId: z.string().optional(),
+  createdAt: z.string(),
+  tags: z.array(z.string()).optional(),
 });
 
 export const PineconeVectorSchema = z.object({
   id: z.string(),
   values: z.array(z.number()),
-  namespace: z.enum(["conversation", "regular"]),
+  namespace: z.enum(["conversation_notes", "memories"]),
   metadata: PineconeMetadataSchema,
 });
 export const PineConeSearchFilterSchema = z.object({
@@ -28,7 +27,7 @@ export const PineconeVectorSearchSchema = z.object({
   vector: z.array(z.number()),
   filter: PineConeSearchFilterSchema.optional(),
   topK: z.number(),
-  namespace: z.enum(["conversation", "regular"]),
+  namespace: z.enum(["conversation_notes", "memories"]),
   includeMetadata: z.boolean().optional(),
   includeVectors: z.boolean().optional(),
 });

@@ -2,6 +2,7 @@ import { env } from "@/env/server.mjs";
 import { ServerMessageType } from "@/types/messages.schema";
 import got, { HTTPError } from "got";
 import {
+  PineconeMetadata,
   PineconeSaveVector,
   PineconeVectorSearch,
   PineconeVectorSearchFilter,
@@ -26,26 +27,19 @@ const catchError = (e: any) => {
 };
 
 export const saveVector = async (
-  message: ServerMessageType,
+  id: string,
+  metadata: PineconeMetadata,
   values: number[],
-  namespace: "conversation" | "regular"
+  namespace: "memories"
 ) => {
   const body: PineconeSaveVector = {
     namespace,
     vectors: [
       {
-        id: message.id,
+        id,
         values: values,
         namespace,
-        metadata: {
-          content: message.content,
-          type: message.type,
-          from: message.from,
-          userId: message.userId,
-          createdAt: message.createdAt,
-          updatedAt: message.updatedAt,
-          tags: message.tags.map((t) => t.tag.tagName),
-        },
+        metadata,
       },
     ],
   };
@@ -55,7 +49,7 @@ export const saveVector = async (
 
 export const searchVectors = async (
   values: number[],
-  namespace: "conversation" | "regular",
+  namespace: "memories",
   limit: number,
   filter?: PineconeVectorSearchFilter
 ) => {
@@ -71,6 +65,7 @@ export const searchVectors = async (
     .post("query", { json: body })
     .json<PineconeVectorSearchResponse>()
     .catch(catchError);
+
   return PineconeVectorSearchResponseSchema.parse(response);
 };
 

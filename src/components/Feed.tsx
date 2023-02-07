@@ -66,21 +66,18 @@ export const Feed = () => {
     setUnsentMessages((prev) => [...prev, message]);
     setPageNo(1);
     mutate(message, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         if (message.type === "prompt")
           executePrompt(
-            { prompt: message.content },
+            data,
             {
               onSuccess: () => {
-                refetch().then(({ data }) => {
-                  if (data?.length) setDisplayedMessages(data);
-                });
+                refetch()
               },
             }
           );
 
         refetch().then(({ data }) => {
-          if (data?.length) setDisplayedMessages(data);
           removeUnsentMessage(message);
           scrollToBottom();
         });
@@ -170,7 +167,7 @@ export const Feed = () => {
     setTimeout(() => {
       clearInterval(interval);
     }, 1000);
-  }, [displayedMessages]);
+  }, [messages]);
 
   // scroll to the bottom when new messages are added but not yet sent to the server
   useEffect(() => {

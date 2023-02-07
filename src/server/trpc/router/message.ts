@@ -1,19 +1,26 @@
 import {
-  createChatEmbedding,
-  createEmbedding,
+  createMessageEmbedding,
   executePrompt,
+  createChatLog,
 } from "@/server/services/chatbot.service";
 import { router, publicProcedure } from "../trpc";
-import { CreateMessageSchema, DeleteMessageSchema, EditMessageSchema, GetMessagesSchema } from "@/types/messages.schema";
-import { z } from "zod";
+import {
+  CreateMessageSchema,
+  DeleteMessageSchema,
+  EditMessageSchema,
+  GetMessagesSchema,
+  MessageSchema,
+} from "@/types/messages.schema";
 import {
   createMessage,
   deleteMessage,
   editMessage,
-  getMessages
+  formatMessage,
+  getMessages,
 } from "@/server/services/messages.service";
 import { getTags } from "@/server/services/tags.services";
 import { deleteVector } from "@/server/lib/pinecone";
+import { gptEmbedding } from "@/server/lib/openai";
 
 export const messageRouter = router({
   createMessage: publicProcedure.input(CreateMessageSchema).mutation(async ({ ctx, input }) => {
@@ -21,37 +28,32 @@ export const messageRouter = router({
     if (!userId) throw new Error("User not logged in");
 
     const response = await createMessage({ ...input }, userId);
-    await createEmbedding(response, "message");
+    if (input.type !== "prompt") await createMessageEmbedding(formatMessage(response), "memories");
 
-    return response;
+    return formatMessage(response);
   }),
-  executePrompt: publicProcedure
-    .input(z.object({ prompt: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const { prompt } = input;
-      const user = ctx.session?.user || null;
-      if (!user) throw new Error("User not logged in");
+  executePrompt: publicProcedure.input(MessageSchema).mutation(async ({ ctx, input }) => {
+    const user = ctx.session?.user || null;
+    if (!user?.id) throw new Error("User not logged in");
 
-      // create embedding vector for prompt
-      const promptVector = await createChatEmbedding(
-        prompt.replace("@chat", ""),
-        user.email ?? user.id,
-        user.id
-      );
-      // execute prompt
-      const response = await executePrompt(promptVector, user);
-      // create vector for response, no need to store in messages table
-      await createChatEmbedding(response, "MEMORIA_BOT", user.id);
+    const prompt = input.content.replace("@chat", "");
+    const promptVector = await gptEmbedding(prompt);
+    await createChatLog(prompt, user.id, user?.name ?? user?.email ?? "User");
 
-      const message = {
-        content: response,
-        type: "regular",
-        from: "Memoria Bot",
-        tags: [{ tagName: "Bot", color: "rgba(54, 162, 235, 1)" }],
-      };
+    const response = await executePrompt(promptVector, user);
 
-      return await createMessage(message, user.id);
-    }),
+    const message = {
+      content: response,
+      type: "regular",
+      from: "Memoria Bot",
+      tags: [{ tagName: "Bot", color: "rgba(54, 162, 235, 1)" }],
+    };
+
+    const result = await createMessage(message, user.id);
+    await createChatLog(response, user.id, "Memoria Bot");
+
+    return result;
+  }),
 
   allMessages: publicProcedure.input(GetMessagesSchema).query(async ({ ctx, input }) => {
     const userId = ctx.session?.user?.id || null;
@@ -63,17 +65,16 @@ export const messageRouter = router({
   allTags: publicProcedure.query(async ({ ctx }) => {
     const userId = ctx.session?.user?.id || null;
     if (!userId) throw new Error("User not logged in");
-
+    
     return await getTags(userId);
   }),
 
   deleteMessage: publicProcedure.input(DeleteMessageSchema).mutation(async ({ ctx, input }) => {
     const user = ctx.session?.user || null;
     if (!user?.id) throw new Error("User not logged in");
-    
-    const isConversation = ![user?.name, user?.email].includes(input.from) || input.type === "prompt";
-    await deleteVector(input.id, isConversation ? "conversation" : "regular");
-    
+
+    await deleteVector(input.id, "memories");
+
     return await deleteMessage(input.id);
   }),
 
