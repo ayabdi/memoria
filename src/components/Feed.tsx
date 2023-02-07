@@ -68,16 +68,9 @@ export const Feed = () => {
     mutate(message, {
       onSuccess: (data) => {
         if (message.type === "prompt")
-          executePrompt(
-            data,
-            {
-              onSuccess: () => {
-                refetch()
-              },
-            }
-          );
+          executePrompt(data, { onSuccess: () => refetch()});
 
-        refetch().then(({ data }) => {
+        refetch().then(() => {
           removeUnsentMessage(message);
           scrollToBottom();
         });
