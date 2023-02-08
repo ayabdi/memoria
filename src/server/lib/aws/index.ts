@@ -3,8 +3,8 @@ import { env } from "../../../env/server.mjs";
 
 const s3 = new AWS.S3({
     credentials: {
-        accessKeyId: env.AWS_ACCESSKEY_ID,
-        secretAccessKey: env.AWS_SECRET_ACCESSKEY
+        accessKeyId: env._AWS_ACCESSKEY_ID,
+        secretAccessKey: env._AWS_SECRET_ACCESSKEY
     }
 });
 
