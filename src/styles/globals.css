@@ -17,7 +17,7 @@
 .w-md-editor-aree,
 .w-md-editor-input,
 .w-md-editor {
-  background-color: inherit!important;
+  background-color: inherit !important;
   white-space: nowrap;
 }
 
@@ -25,10 +25,14 @@
   display: none !important;
 }
 
-.wmde-markdown{
-    background-color: inherit !important;
-    white-space: initial !important
+.wmde-markdown {
+  background-color: inherit !important;
+  white-space: initial !important;
 }
-.rdp-button:hover:not([disabled]) { 
-  color: black
+.rdp-button:hover:not([disabled]) {
+  color: black;
+}
+
+li {
+  list-style-type: initial;
 }
