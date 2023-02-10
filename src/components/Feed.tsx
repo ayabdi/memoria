@@ -67,8 +67,7 @@ export const Feed = () => {
     setPageNo(1);
     mutate(message, {
       onSuccess: (data) => {
-        if (message.type === "prompt")
-          executePrompt(data, { onSuccess: () => refetch()});
+        if (message.type === "prompt") executePrompt(data, { onSuccess: () => refetch() });
 
         refetch().then(() => {
           removeUnsentMessage(message);
@@ -144,14 +143,13 @@ export const Feed = () => {
   // scroll to the last fetched message every page load
   // this to prevent abrupt scrolling to the top when new messages are fetched
   useEffect(() => {
-    if (!messages?.length || !isFetched) return;
-
+    if (pageNo <= 1) return;
     // scroll to last message when user scrolls to top of page
-    if (pageNo > 1) {
-      scrollToLastMessage();
-      return;
-    }
+    scrollToLastMessage();
+  }, [displayedMessages]);
 
+  useEffect(() => {
+    if (pageNo > 1 || !messages?.length || !isFetched) return;
     // hack to keep messages view scrolled to the bottom on load
     // this is done because markdown messages take a while to render then screws up the scroll position
     const interval = setInterval(() => {
@@ -168,19 +166,16 @@ export const Feed = () => {
   }, [unsentMessages]);
 
   // trigger page number change when user scrolls to top of page
-  // would ideally refetch and update pagNo in one go, but cant pass input to refetch function for some reason 
+  // would ideally refetch and update pagNo in one go, but cant pass input to refetch function for some reason
   useEffect(() => {
     if (!isFetched || !chatContainerRef.current) return;
     const handleScroll = () => {
-      if (chatContainerRef.current?.scrollTop === 0 && hasMoreMessages){
+      if (chatContainerRef.current?.scrollTop === 0 && hasMoreMessages && messages?.length === 50) {
         setPageNo((prev) => prev + 1);
       }
     };
     chatContainerRef.current.addEventListener("scroll", handleScroll);
-    return () => {
-      chatContainerRef.current?.removeEventListener("scroll", handleScroll);
-    };
-  }, [hasMoreMessages]);
+  }, [messages]);
 
   // refetch when page number changes
   useEffect(() => {
@@ -256,7 +251,7 @@ export const Feed = () => {
           {unsentMessages &&
             unsentMessages.map((message, idx) => (
               <MessageRow
-                message={{...message, id: idx.toString()}}
+                message={{ ...message, id: idx.toString() }}
                 isLoadingMessage={true}
                 onClickTag={onTagFilter}
                 key={idx}
