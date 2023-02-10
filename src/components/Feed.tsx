@@ -51,11 +51,11 @@ export const Feed = () => {
         else setDisplayedMessages((prev) => [...data, ...(prev ?? [])]);
 
         if (data?.length < 50) setHasMoreMessages(false);
+        else setHasMoreMessages(true);
       },
     }
   );
   trpc.message.allTags.useQuery();
-
   const { mutate } = trpc.message.createMessage.useMutation();
   const { mutate: editMessage } = trpc.message.editMessage.useMutation();
   const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
@@ -168,18 +168,19 @@ export const Feed = () => {
   }, [unsentMessages]);
 
   // trigger page number change when user scrolls to top of page
-  // would ideally refetch and update pagNo in one go, but cant pass input to refetch function for some reason
+  // would ideally refetch and update pagNo in one go, but cant pass input to refetch function for some reason 
   useEffect(() => {
     if (!isFetched || !chatContainerRef.current) return;
     const handleScroll = () => {
-      if (chatContainerRef.current?.scrollTop === 0 && hasMoreMessages)
+      if (chatContainerRef.current?.scrollTop === 0 && hasMoreMessages){
         setPageNo((prev) => prev + 1);
+      }
     };
     chatContainerRef.current.addEventListener("scroll", handleScroll);
     return () => {
       chatContainerRef.current?.removeEventListener("scroll", handleScroll);
     };
-  }, [isFetched]);
+  }, [hasMoreMessages]);
 
   // refetch when page number changes
   useEffect(() => {
