@@ -55,7 +55,7 @@ export const Feed = () => {
       },
     }
   );
-  trpc.message.allTags.useQuery();
+  const { data: tags } = trpc.message.allTags.useQuery();
   const { mutate } = trpc.message.createMessage.useMutation();
   const { mutate: editMessage } = trpc.message.editMessage.useMutation();
   const { mutate: deleteMessage } = trpc.message.deleteMessage.useMutation();
@@ -124,6 +124,7 @@ export const Feed = () => {
   };
 
   const onTagFilter = (tag: TagSchema) => {
+    setPageNo(1);
     // add tag to filter if not already present
     setTagsToFilter((prev) => {
       if (!prev) return [tag];
@@ -131,7 +132,6 @@ export const Feed = () => {
       if (idx === -1) return [...prev, tag];
       return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
     });
-    setPageNo(1);
   };
 
   const resetState = () => {
@@ -170,12 +170,13 @@ export const Feed = () => {
   useEffect(() => {
     if (!isFetched || !chatContainerRef.current) return;
     const handleScroll = () => {
-      if (chatContainerRef.current?.scrollTop === 0 && hasMoreMessages && messages?.length === 50) {
+      if (chatContainerRef.current?.scrollTop === 0 && hasMoreMessages) {
         setPageNo((prev) => prev + 1);
       }
     };
     chatContainerRef.current.addEventListener("scroll", handleScroll);
-  }, [messages]);
+    return () => chatContainerRef.current?.removeEventListener("scroll", handleScroll);
+  }, [displayedMessages]);
 
   // refetch when page number changes
   useEffect(() => {
@@ -190,8 +191,43 @@ export const Feed = () => {
     setDisplayedMessages([]);
   }, [tagsToFilter]);
 
+  const mostRecentTags = tags
+    ?.filter((tag) => tag.tagName !== "Bot")
+    .sort((a, b) => {
+      const aDate = new Date(a.createdAt);
+      const bDate = new Date(b.createdAt);
+      return bDate.getTime() - aDate.getTime();
+    })
+    .slice(0, 5);
   return (
     <>
+      <div className="absolute left-10 top-24 w-[15%] max-w-[300px] rounded border border-slate-700 p-3">
+        <div className="px-3 py-1 font-semibold uppercase text-zinc-100">Recents</div>
+        <div className="flex flex-col pt-2">
+          {mostRecentTags?.map(
+            (tag, idx) =>
+              tag.tagName !== "Bot" &&
+              idx <= 5 && (
+                <div
+                  key={tag.id}
+                  className="flex cursor-pointer items-center px-3 py-1 text-lg text-zinc-100 hover:bg-zinc-700"
+                  onClick={() => onTagFilter(tag)}
+                >
+                  <div className="my-auto flex">
+                    <span
+                      className="my-auto inline-block h-4 w-4 rounded-full border text-center"
+                      style={{
+                        backgroundColor: tag.color.replace("1)", "0.5)"),
+                        borderColor: tag.color,
+                      }}
+                    ></span>
+                    <p className="ml-3 text-zinc-300">{tag.tagName}</p>
+                  </div>
+                </div>
+              )
+          )}
+        </div>
+      </div>
       <div className="mt-auto flex h-[calc(100vh_-_55px)] w-full min-w-[370px] max-w-[800px]  flex-col border-x border-slate-700 pb-5 md:w-3/4 2xl:w-1/2">
         {tagsToFilter?.length || !!searchTerm ? (
           <div className="flex w-full px-4 pt-4 pb-1 text-lg text-white">
@@ -205,60 +241,67 @@ export const Feed = () => {
         ) : (
           <></>
         )}
-        <div
-          ref={chatContainerRef}
-          className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
-        >
-          <div className="py-3">
-            <MoonLoader
-              color="#fff"
-              size={20}
-              className="m-auto"
-              loading={isFetching && !!displayedMessages?.length}
-            />
-          </div>
-
-          {displayedMessages?.map((message, idx) => (
-            <div id={message.id} key={idx} className={idx === 0 ? "mt-auto " : ""}>
-              {messageToEdit && messageToEdit.id === message.id ? (
-                <div className="flex px-6">
-                  <Avatar name={message.from} size="50" className="mb-auto mt-1 mr-4 rounded-md" />
-                  <MessageInputBox
-                    onSubmit={(m: CreateMessageSchema | EditMessageSchema) => {
-                      handleEdit(m as EditMessageSchema);
-                      setMessageToEdit(null);
-                    }}
-                    mode="edit"
-                  />
-                </div>
-              ) : (
-                <MessageRow
-                  message={message}
-                  key={message.id + idx.toString()}
-                  deleteMessage={() => handleDelete(message)}
-                  onClickTag={onTagFilter}
-                  className={idx === 0 ? "mt-auto" : ""}
-                />
-              )}
-            </div>
-          ))}
-          <MoonLoader
-            color="#fff"
-            size={70}
-            className="m-auto"
-            loading={isFetching && !displayedMessages?.length}
-          />
-          {unsentMessages &&
-            unsentMessages.map((message, idx) => (
-              <MessageRow
-                message={{ ...message, id: idx.toString() }}
-                isLoadingMessage={true}
-                onClickTag={onTagFilter}
-                key={idx}
-                className={messages?.length === 0 ? "mt-auto " : ""}
+        {displayedMessages?.length ? (
+          <div
+            ref={chatContainerRef}
+            className="flex h-full w-full flex-1 flex-col overflow-y-auto whitespace-pre-wrap"
+          >
+            <div className="py-3">
+              <MoonLoader
+                color="#fff"
+                size={20}
+                className="m-auto"
+                loading={isFetching && !!displayedMessages?.length}
               />
+            </div>
+
+            {displayedMessages?.map((message, idx) => (
+              <div id={message.id} key={idx} className={idx === 0 ? "mt-auto " : ""}>
+                {messageToEdit && messageToEdit.id === message.id ? (
+                  <div className="flex px-6">
+                    <Avatar
+                      name={message.from}
+                      size="50"
+                      className="mb-auto mt-1 mr-4 rounded-md"
+                    />
+                    <MessageInputBox
+                      onSubmit={(m: CreateMessageSchema | EditMessageSchema) => {
+                        handleEdit(m as EditMessageSchema);
+                        setMessageToEdit(null);
+                      }}
+                      mode="edit"
+                    />
+                  </div>
+                ) : (
+                  <MessageRow
+                    message={message}
+                    key={message.id + idx.toString()}
+                    deleteMessage={() => handleDelete(message)}
+                    onClickTag={onTagFilter}
+                    className={idx === 0 ? "mt-auto" : ""}
+                  />
+                )}
+              </div>
             ))}
-        </div>
+
+            {unsentMessages &&
+              unsentMessages.map((message, idx) => (
+                <MessageRow
+                  message={{ ...message, id: idx.toString() }}
+                  isLoadingMessage={true}
+                  onClickTag={onTagFilter}
+                  key={idx}
+                  className={messages?.length === 0 ? "mt-auto " : ""}
+                />
+              ))}
+          </div>
+        ): <></>}
+        <MoonLoader
+          color="#fff"
+          size={70}
+          className="m-auto"
+          loading={isFetching && !displayedMessages?.length}
+        />
         <div className="flex-0 mt-4 px-6">
           {isBotTyping && (
             <p className="p-1 pt-0 text-sm text-slate-400">Memoria Bot is typing...</p>
