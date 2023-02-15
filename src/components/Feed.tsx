@@ -67,7 +67,7 @@ export const Feed = () => {
     setPageNo(1);
     mutate(message, {
       onSuccess: (data) => {
-        if (message.type === "prompt") executePrompt(data, { onSuccess: () => refetch() });
+        if (message.type === "prompt") executePrompt({prompt: message.content}, { onSuccess: () => refetch() });
 
         refetch().then(() => {
           removeUnsentMessage(message);
@@ -91,7 +91,7 @@ export const Feed = () => {
   };
   const handleDelete = (message: MessageSchema) => {
     if (!message.id) return;
-    deleteMessage(message);
+    deleteMessage(message.id);
 
     setDisplayedMessages((prev) => {
       if (!prev) return prev;
