@@ -4,11 +4,12 @@
   <summary>Table of Contents</summary> <br/>
   <ol>
     <li>
-      <a href="#about-the-project">About The Project</a>
+      <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#built-with">Built With</a></li>
+        <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
+    <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
@@ -38,6 +39,15 @@ Excited to see how this experiment materializes.
 * PostgreSQL
 
 
+<!-- GETTING STARTED -->
+## Getting Started
+
+### Installation
+To-Do
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
 
 <!-- CONTACT -->
 ## Contact
