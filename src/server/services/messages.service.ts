@@ -4,6 +4,7 @@ import {
   GetMessagesSchema,
   MessageSchema,
   ServerMessageType,
+  SimilarMessagesResponseSchema,
 } from "@/types/messages.schema";
 import {
   extractAfterDate,
@@ -14,9 +15,11 @@ import {
 } from "@/utils/common";
 import { prisma } from "@/server/db/client";
 import { getTags } from "./tags.services";
+import { Prisma } from "@prisma/client";
+import { gptEmbedding } from "../lib/openai";
 
 export const createMessage = async (message: CreateMessageSchema, userId: string) => {
-  const { content, type, from, tags, vector } = message;
+  const { content, type, from, tags } = message;
   const existingTags = await getTags(userId);
 
   const tagsToAdd = tags?.map((tag) => {
@@ -27,23 +30,56 @@ export const createMessage = async (message: CreateMessageSchema, userId: string
     };
   });
 
-  return await prisma.message.create({
-    data: {
-      content,
-      type,
-      userId,
-      from,
-      vector,
-      ...(tagsToAdd?.length && { tags: { create: tagsToAdd } }),
-    },
-    include: {
-      tags: {
-        include: {
-          tag: true,
+  const [result, vector] = await Promise.all([
+    prisma.message.create({
+      data: {
+        content,
+        type,
+        userId,
+        from,
+        ...(tagsToAdd?.length && { tags: { create: tagsToAdd } }),
+      },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
         },
       },
-    },
-  });
+    }),
+    gptEmbedding(content),
+  ]);
+
+  if (vector?.length) await saveVector(result.id, vector);
+
+  return result;
+};
+
+export const saveVector = async (messageId: string, vector: number[]) => {
+  // use raw query to update vector
+  return await prisma.$queryRawUnsafe(
+    `UPDATE "Message" SET vector = '[${vector.toString()}]' WHERE id = '${messageId}'`
+  );
+};
+
+export const getSimilarMessages = async (
+  queryVector: number[],
+  limit: number,
+  threshold: number,
+  userId: string
+) => {
+  // semantic search using vector dot product similarity
+  // done with the help of the pgvector extension -> https://github.com/pgvector/pgvector
+  // todo -> figure out how to do this with safe queries
+  const result = (await prisma.$queryRawUnsafe(
+    `SELECT id, content, "createdAt", (vector <#> '[${queryVector.toString()}]') as similarity
+   FROM "Message" 
+   WHERE "userId" = '${userId}' AND vector IS NOT NULL AND (vector <#> '[${queryVector.toString()}]') < ${threshold} AND NOT type = 'prompt' AND NOT "from" = 'Memoria Bot'
+   ORDER by vector <#> '[${queryVector.toString()}]' 
+   LIMIT ${limit}`
+  )) as any[];
+    
+  return result.map((r: any) => SimilarMessagesResponseSchema.parse(r));
 };
 
 export const getMessages = async (query: GetMessagesSchema, userId: string) => {
@@ -107,7 +143,6 @@ export const getMessages = async (query: GetMessagesSchema, userId: string) => {
     const messageTags = message.tags.map((tag) => tag.tag.tagName);
     return tagNames.every((tag) => messageTags.includes(tag));
   });
-
   return result.map((message) => formatMessage(message)).reverse();
 };
 
@@ -161,7 +196,11 @@ export const editMessage = async (message: EditMessageSchema, userId: string) =>
       },
     },
   });
-  return formatMessage(result)
+
+  const vector = await gptEmbedding(message.content);
+  if (vector?.length) await saveVector(message.id, vector);
+
+  return formatMessage(result);
 };
 
 export const deleteMessage = async (messageId: string) => {
@@ -180,10 +219,10 @@ export const deleteMessage = async (messageId: string) => {
 };
 
 export const formatMessage = (result: ServerMessageType) => {
-    const messsage = {
-      ...result,
-      tags: result.tags.map((tag) => tag.tag),
-    };
+  const messsage = {
+    ...result,
+    tags: result.tags.map((tag) => tag.tag),
+  };
 
-    return MessageSchema.parse(messsage);
+  return MessageSchema.parse(messsage);
 };

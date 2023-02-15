@@ -14,7 +14,6 @@ export const ServerMessageSchema = z.object({
   content: z.string(),
   from: z.string(),
   type: z.string(),
-  vector: z.array(z.number()).optional(),
   userId: z.string().optional(),
   tags: z
     .array(
@@ -50,18 +49,24 @@ export const MessageSchema = z.object({
   content: z.string(),
   from: z.string(),
   type: z.string(),
-  vector: z.array(z.number()).optional(),
   userId: z.string().optional(),
   tags: z.array(TagSchema).optional(),
+});
+export const GetMessagesSchema = z.object({
+  page: z.number().optional(),
+  searchTerm: z.string().optional(),
+});
+
+export const SimilarMessagesResponseSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  similarity: z.number(),
+  createdAt: z.date(),
 });
 
 export const CreateMessageSchema = MessageSchema.omit({ id: true });
 export const EditMessageSchema = MessageSchema;
 
-export const GetMessagesSchema = z.object({
-  page: z.number().optional(),
-  searchTerm: z.string().optional(),
-});
 export const DeleteMessageSchema = MessageSchema;
 
 export type TagSchema = z.infer<typeof TagSchema>;
@@ -70,3 +75,4 @@ export type EditMessageSchema = z.infer<typeof EditMessageSchema>;
 export type GetMessagesSchema = z.infer<typeof GetMessagesSchema>;
 export type CreateMessageSchema = z.infer<typeof CreateMessageSchema>;
 export type DeleteMessageSchema = z.infer<typeof DeleteMessageSchema>;
+export type SimilarMessagesResponseSchema = z.infer<typeof SimilarMessagesResponseSchema>;
