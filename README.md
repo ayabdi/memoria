@@ -9,13 +9,6 @@
         <li><a href="#built-with">Built With</a></li>
       </ul>
     </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
@@ -43,31 +36,6 @@ Excited to see how this experiment materializes.
 * GPT-3
 * Pinecone - (Vector Db for semantic search)
 * PostgreSQL
-
-<!-- GETTING STARTED -->
-## Getting Started
-
-### Installation
-
-  1. Clone the repo
-     ```sh
-     git clone https://github.com/ayabdi/memoria.git
-     ```
-  2. Install NPM packages
-     ```sh
-      npm install
-      ```
-   
-## Usage
-   Run locally
-   ```sh
-   npm run dev
-   ```
-   Link to Web app https://memoria-alpha.vercel.app
-   
-   ## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
 
 
 
