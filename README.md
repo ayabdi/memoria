@@ -35,8 +35,7 @@ Excited to see how this experiment materializes.
 * Prisma
 * NextAuth.js
 * GPT-3
-* Pinecone - (Vector Db for semantic search)
-* PostgreSQL
+* PostgreSQL (pgvector extension for vector search via supabase)
 
 
 <!-- GETTING STARTED -->
