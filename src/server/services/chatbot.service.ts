@@ -9,7 +9,7 @@ import { getSimilarMessages } from "./messages.service";
 
 export const executePrompt = async (prompt: number[], user: User) => {
   const [memories, conversations] = await Promise.all([
-    getSimilarMessages(prompt, 10, 0.75, user.id),
+    getSimilarMessages(prompt, 10, 0.70, user.id),
     fetchConversations(user.id, 10),
   ]);
 

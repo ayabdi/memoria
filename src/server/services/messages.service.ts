@@ -57,7 +57,6 @@ export const createMessage = async (message: CreateMessageSchema, userId: string
 
 export const saveVector = async (messageId: string, vector: number[]) => {
   // use raw query to update vector
-  console.log("saving vector", vector.toString());
   return await prisma.$queryRawUnsafe(
     `UPDATE "Message" SET vector = '[${vector.toString()}]' WHERE id = '${messageId}'`
   );
@@ -71,10 +70,11 @@ export const getSimilarMessages = async (
 ) => {
   // semantic search using vector dot product similarity
   // done with the help of the pgvector extension -> https://github.com/pgvector/pgvector
+  // todo -> figure out how to do this with safe queries
   const result = (await prisma.$queryRawUnsafe(
     `SELECT id, content, "createdAt", (vector <#> '[${queryVector.toString()}]') as similarity
    FROM "Message" 
-   WHERE "userId" = '${userId}' AND vector IS NOT NULL AND (vector <#> '[${queryVector.toString()}]') < ${threshold}
+   WHERE "userId" = '${userId}' AND vector IS NOT NULL AND (vector <#> '[${queryVector.toString()}]') < ${threshold} AND NOT type = 'prompt' AND NOT "from" = 'Memoria Bot'
    ORDER by vector <#> '[${queryVector.toString()}]' 
    LIMIT ${limit}`
   )) as any[];
