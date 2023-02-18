@@ -26,7 +26,6 @@ export const executePrompt = async (prompt: number[], user: User) => {
     .replace("<<MEMORIES>>", memories.map((m) => combined(m.content, m.createdAt)).join("\n\n"))
     .replace("<<CONVERSATION>>", conversations);
 
-  console.log(fullPrompt);
   const response = await createCompletion(fullPrompt, user);
 
   return response;
