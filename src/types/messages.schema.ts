@@ -50,6 +50,7 @@ export const MessageSchema = z.object({
   from: z.string(),
   type: z.string(),
   userId: z.string().optional(),
+  conversationId: z.string().optional().nullable(),
   tags: z.array(TagSchema).optional(),
 });
 export const GetMessagesSchema = z.object({

@@ -12,6 +12,7 @@ import {
   extractDuringDate,
   extractSearchTermFromSearchString as extractSearchTerm,
   extractTagsFromSearchTerm as extractTags,
+  formatMessage,
 } from "@/utils/common";
 import { prisma } from "@/server/db/client";
 import { getTags } from "./tags.services";
@@ -19,7 +20,7 @@ import { Prisma } from "@prisma/client";
 import { gptEmbedding } from "../lib/openai";
 
 export const createMessage = async (message: CreateMessageSchema, userId: string) => {
-  const { content, type, from, tags } = message;
+  const { content, type, from, tags, conversationId } = message;
   const existingTags = await getTags(userId);
 
   const tagsToAdd = tags?.map((tag) => {
@@ -37,6 +38,7 @@ export const createMessage = async (message: CreateMessageSchema, userId: string
         type,
         userId,
         from,
+        conversationId,
         ...(tagsToAdd?.length && { tags: { create: tagsToAdd } }),
       },
       include: {
@@ -186,6 +188,7 @@ export const editMessage = async (message: EditMessageSchema, userId: string) =>
     data: {
       content: message.content,
       type: message.type,
+      conversationId: message.conversationId,
       ...(tagsToAdd?.length && { tags: { create: tagsToAdd } }),
     },
     include: {
@@ -216,13 +219,4 @@ export const deleteMessage = async (messageId: string) => {
       id: messageId,
     },
   });
-};
-
-export const formatMessage = (result: ServerMessageType) => {
-  const messsage = {
-    ...result,
-    tags: result.tags.map((tag) => tag.tag),
-  };
-
-  return MessageSchema.parse(messsage);
 };

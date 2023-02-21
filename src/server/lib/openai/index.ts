@@ -33,12 +33,12 @@ export async function gptCompletion(prompt: string, stop: string[]): Promise<str
             const response = await openai.createCompletion({
                 model: 'text-davinci-003',
                 prompt,
-                temperature: 0.0,
+                temperature: 0.5,
                 max_tokens: 400,
-                top_p: 1.0,
+                
                 frequency_penalty: 0.0,
                 presence_penalty: 0.0,
-                stop
+               
             });
             if (!response?.data?.choices || response?.data?.choices.length === 0) {
                 return 'GPT3 error: No response';

@@ -35,7 +35,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
   const [tagsToFilter] = useAtom(tagsToFilterAtom);
   const [messageToEdit, setMessageToEdit] = useAtom(messageToEditAtom);
 
-  const [inputMode, setInputMode] = useState<"regular" | "markdown" | "prompt">(
+  const [inputMode, setInputMode] = useState<"regular" | "markdown" | "chat">(
     "regular"
   );
   const [mdValue, setMdValue] = useState("***hello world!***");
@@ -65,7 +65,7 @@ export const MessageInputBox = (props: MessageBoxProps) => {
 
     while ((matchArr = regex.exec(text)) !== null) {
       start = matchArr.index;
-      setInputMode("prompt");
+      setInputMode("chat");
       callback(start, start + matchArr[0].length);
     }
     if (!text.includes("@chat")) {

@@ -18,6 +18,7 @@ import {
   tagsToFilterAtom,
 } from "../store";
 import { useSession } from "next-auth/react";
+import { formatMessage } from "@/utils/common";
 
 export const Feed = () => {
   const user = useSession().data?.user;
@@ -62,20 +63,38 @@ export const Feed = () => {
   const { mutate: executePrompt, isLoading: isBotTyping } =
     trpc.message.executePrompt.useMutation();
 
+  const getCurrentConversationId = () => {
+    // find out if is new conversation i.e. more than 30 mins since last message with type "chat"
+    const lastMessage = [...messages!]?.reverse().find((m) => m.type === "chat" && m.createdAt);
+
+    const thirtyMinutes = 30 * 60 * 1000;
+    const timeDifference = new Date().getTime() - lastMessage!.createdAt!.getTime() ?? 0;
+    const isNewConversation = lastMessage && timeDifference > thirtyMinutes;
+
+    return isNewConversation ? null : lastMessage?.conversationId;
+  };
+
   const createMessage = async (message: CreateMessageSchema) => {
     setUnsentMessages((prev) => [...prev, message]);
     setPageNo(1);
-    mutate(message, {
-      onSuccess: (data) => {
-        if (message.type === "prompt") executePrompt({prompt: message.content}, { onSuccess: () => refetch() });
 
-        refetch().then(() => {
-          removeUnsentMessage(message);
-          scrollToBottom();
-        });
-      },
-      onError: () => removeUnsentMessage(message),
-    });
+    const isChat = message.type === "chat";
+    const currentConversationId = getCurrentConversationId();
+    mutate(
+      { ...message, ...(isChat && { conversationId: currentConversationId }) },
+      {
+        onSuccess: (data) => {
+          if (isChat) {
+            executePrompt(formatMessage(data), { onSuccess: () => refetch() });
+          }
+          refetch().then(() => {
+            removeUnsentMessage(message);
+            scrollToBottom();
+          });
+        },
+        onError: () => removeUnsentMessage(message),
+      }
+    );
   };
 
   const handleEdit = (message: EditMessageSchema) => {
@@ -295,7 +314,9 @@ export const Feed = () => {
                 />
               ))}
           </div>
-        ): <></>}
+        ) : (
+          <></>
+        )}
         <MoonLoader
           color="#fff"
           size={70}

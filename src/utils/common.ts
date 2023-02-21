@@ -1,3 +1,4 @@
+import { MessageSchema, ServerMessageType } from "@/types/messages.schema";
 
 export const cleanMessage = (message: string) => {
     // replace <div> and </div> and <br> with new lines
@@ -29,3 +30,12 @@ export const extractSearchTermFromSearchString = (searchString: string | undefin
     return searchString?.replace(/tag:([^ ]*)/g, "").replace(/during:([^ ]*)/g, "").replace(/after:([^ ]*)/g, "").replace(/before:([^ ]*)/g, "") || null;
 }
 
+export const formatMessage = (result: ServerMessageType) => {
+    const messsage = {
+      ...result,
+      tags: result.tags.map((tag) => tag.tag),
+    };
+  
+    return MessageSchema.parse(messsage);
+  };
+  

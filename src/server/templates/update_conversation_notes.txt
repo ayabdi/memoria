@@ -1,0 +1,14 @@
+In a conversation between Memoria Bot and <<USER>> 
+
+The following are notes on the current conversation:
+<<NOTES>>
+
+
+The conversation continues with the following:
+
+<<INPUT>>
+
+
+Write brief notes of the conversation so far in a hyphenated list format like "- "
+
+NOTES: 
