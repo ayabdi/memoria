@@ -1,10 +1,18 @@
 import { gptCompletion, gptEmbedding } from "../lib/openai";
-import {  MessageSchema} from "@/types/messages.schema";
+import { MessageSchema } from "@/types/messages.schema";
 import { readFileSync } from "fs";
 import { User } from "next-auth";
 import { prisma } from "@/server/db/client";
 import path from "path";
-import { getSimilarMessages } from "./messages.service";
+import { z } from "zod";
+
+export const SimilarConversationsResponseSchema = z.object({
+  id: z.string(),
+  summary: z.string(),
+  createdAt: z.date().optional(),
+  similarity: z.number(),
+});
+export type SimilarConversationsResponse = z.infer<typeof SimilarConversationsResponseSchema>;
 
 export const executePrompt = async (prompt: number[], user: User, conversationId: string) => {
   const conversation = conversationId ? await fetchConversation(conversationId) : null;
@@ -14,19 +22,21 @@ export const executePrompt = async (prompt: number[], user: User, conversationId
       .map((m) => `${m.from}: ${m.content.replace("@chat ", "")}`)
       .join("\n\n") || "";
 
-  const templateFile = path.join(
-    process.cwd(),
-    "src",
-    "server",
-    "templates",
-    "prompt_response.txt"
-  );
-  const template = readFileSync(templateFile, "utf8");
+  const similarConversations = await fetchSimilarConversations(prompt, 5, 0.5, user.id);
+  console.log(similarConversations);
+  const template = openFile("prompt_response.txt");
 
   const fullPrompt = template
     .replace("<<NOTES>>", conversation?.summary || "")
-    .replace("<<CONVERSATION>>", recentMessages);
+    .replace("<<CONVERSATION>>", recentMessages)
+    .replace(
+      "<<MEMORIES>>",
+      similarConversations
+        .map((c, idx) => `${idx + 1}. ${c.summary} \n Date: ${c.createdAt}`)
+        .join("\n")
+    );
 
+  console.log(fullPrompt);
   const response = await createCompletion(fullPrompt, user);
 
   return response;
@@ -47,6 +57,31 @@ const fetchConversation = async (conversationId: string) => {
   });
 };
 
+const fetchSimilarConversations = async (
+  queryVector: number[],
+  limit: number,
+  threshold: number,
+  userId: string
+) => {
+  // semantic search using vector dot product similarity
+  // done with the help of the pgvector extension ->
+  const result = (await prisma.$queryRawUnsafe(
+    `SELECT id, "createdAt", summary, (vector <#> '[${queryVector.toString()}]') as similarity
+    FROM "Conversation"
+    WHERE "userId" = '${userId}' AND vector IS NOT NULL AND (vector <#> '[${queryVector.toString()}]') < ${threshold * -1}
+    ORDER by vector <#> '[${queryVector.toString()}]'
+    LIMIT ${limit}`
+  )) as any[];
+
+  return result.map((r: any) => SimilarConversationsResponseSchema.parse(r));
+};
+
+const saveVector = async (conversationId: string, vector: number[]) => {
+  // use raw query to update vector
+  return await prisma.$queryRawUnsafe(
+    `UPDATE "Conversation" SET vector = '[${vector.toString()}]' WHERE id = '${conversationId}'`
+  );
+};
 export const createConversation = async (user: User, messages: MessageSchema[]) => {
   const res = await prisma.conversation.create({
     data: {
@@ -86,8 +121,12 @@ export const updateConversation = async (
     )
     .replace("<<NOTES>>", conversation.summary)
     .replaceAll("<<USER>>", user.name ?? user.email ?? "USER");
-
+  
+  console.log(prompt)
   const summary = await createCompletion(prompt, user);
+      console.log(summary)
+  const summaryVector = await gptEmbedding(summary);
+  saveVector(conversationId, summaryVector);
 
   const res = await prisma.conversation.update({
     where: {
