@@ -22,7 +22,7 @@
 
 I'm developing a chat-inspired app for easy and efficient task management and journaling of my daily thoughts and activities. With the ability to categorize each entry through assigning tags, this app aims to provide an alternative to traditional note-taking apps.
 
-In addition, the app includes a personal assistant powered by GPT to retain long-term memories of my entries and conversations using principles from [Natural Language Cognitive Architecture](https://github.com/daveshap/NaturalLanguageCognitiveArchitecture) by the brilliant [David Shapiro](https://www.davidkshapiro.com). 
+In addition, the app includes a personal assistant powered by GPT to retain long-term memories of my entries and conversations/
 
 Excited to see how this experiment materializes.
 
